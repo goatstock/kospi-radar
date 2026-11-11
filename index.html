@@ -20,11 +20,11 @@ html{background:#F2F4F6;padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-text-size-adjust:100%;padding-bottom:calc(74px + env(safe-area-inset-bottom,0px))}
 [hidden]{display:none!important}
 button,input{font:inherit;color:inherit}
-header{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;align-items:center;gap:8px;max-width:620px;margin:0 auto;padding-block:10px 8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-header b{font-size:19px;letter-spacing:-.02em;white-space:nowrap}
-.badge{margin-left:auto;font-size:12px;font-weight:600;color:var(--acc);background:var(--dnA);border-radius:99px;padding:5px 10px;white-space:nowrap}
-.iconbtn{width:38px;height:38px;flex:none;border-radius:50%;border:1px solid var(--line);background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--sub)}
-.pill{height:34px;border:0;border-radius:99px;background:var(--acc);color:#fff;font-weight:700;padding:0 12px;cursor:pointer;white-space:nowrap}
+header{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;align-items:center;gap:6px;max-width:620px;margin:0 auto;padding-block:10px 8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header b{font-size:17px;letter-spacing:-.02em;white-space:nowrap}
+.badge{margin-left:auto;font-size:11px;font-weight:600;color:var(--acc);background:var(--dnA);border-radius:99px;padding:4px 8px;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.iconbtn{width:34px;height:34px;flex:none;border-radius:50%;border:1px solid var(--line);background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--sub)}
+.pill{height:32px;border:0;border-radius:99px;background:var(--acc);color:#fff;font-weight:700;padding:0 12px;cursor:pointer;white-space:nowrap}
 .wrap{max-width:620px;margin:0 auto;display:flex;flex-direction:column;gap:12px;padding-block:6px 16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .card{background:var(--card);border-radius:20px;padding:16px 18px;min-width:0}
 .card h3{margin:0 0 8px;font-size:13px;font-weight:500;color:var(--mute)}
@@ -39,7 +39,8 @@ header b{font-size:19px;letter-spacing:-.02em;white-space:nowrap}
 .sc.w{background:var(--dnA);color:var(--dn)}.sc.n{background:var(--soft);color:var(--sub)}
 .nm{flex:1;min-width:0;display:flex;flex-direction:column}.nm b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.nm span{font-size:12px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .px{display:flex;flex-direction:column;align-items:flex-end;font-size:15px;font-variant-numeric:tabular-nums;flex:none}.px span{font-size:13px}
-.seg{display:flex;gap:4px;background:var(--line);border-radius:12px;padding:4px;overflow-x:auto}
+.seg{display:flex;gap:4px;background:var(--line);border-radius:12px;padding:4px;overflow-x:auto;max-width:100%;min-width:0}
+#tfseg button{min-width:40px}
 .seg button{flex:1;min-width:52px;height:34px;border:0;border-radius:9px;background:transparent;color:var(--mute);cursor:pointer;white-space:nowrap;font-size:13px}
 .seg button.on{background:var(--card);color:var(--ink);font-weight:700}
 .seg button:disabled{opacity:.45;cursor:not-allowed}
@@ -112,7 +113,7 @@ function gate(){const now=Date.now(),st=tGet();
   if(!st)return agree();
   const end=Math.min(st+TRIAL_MS,HARD_STOP);
   if(now>=end)return ended("3일 체험 기간이 끝났습니다.");
-  $("#badge").textContent="체험 "+leftText(end-now)+" 남음";$("#nav").style.display="";return true}
+  $("#badge").textContent=leftText(end-now)+" 남음";$("#nav").style.display="";return true}
 function shell(h){$("#nav").style.display="none";$("#view").innerHTML=h}
 function agree(){shell(`<div class="card" style="display:flex;flex-direction:column;gap:12px"><img src="logo.png" alt="GOAT STOCK 로고" width="64" height="64" style="border-radius:16px"><b style="font-size:22px;letter-spacing:-.01em;line-height:1.3">GOAT STOCK<br>3일 무료 체험</b><span class="mu" style="font-size:13px;margin-top:-6px">코스피 · 미장 레이더</span>
   <div style="font-size:14px;color:var(--sub);line-height:1.6">국내 950종목과 미국 S&amp;P500 533종목의 시세·수급·뉴스를 점수로 매긴 결과를 봅니다. 전 종목 차트(일·주·월), 투자자별 수급, 점수 근거, 세계 지표, 속보가 들어 있습니다. 시작을 누른 때부터 <b>72시간</b> 쓸 수 있습니다.</div>
@@ -126,7 +127,7 @@ function agree(){shell(`<div class="card" style="display:flex;flex-direction:col
 function ended(msg){shell(`<div class="card" style="display:flex;flex-direction:column;gap:12px"><b style="font-size:22px;letter-spacing:-.02em">체험이 끝났습니다</b>
   <div style="font-size:14px;color:var(--sub);line-height:1.6">${esc(msg)} 써 주셔서 감사합니다.<br>정식판 소식은 이 링크를 보내 드린 분께 문의해 주세요.</div>${DISC}</div>`);$("#badge").textContent="체험 종료";return false}
 /* routing */
-let VIEW="kr",SEG="매수후보",CUR=null,TF="D",TIMER=null;
+let VIEW="kr",SEG="매수후보",CUR=null,TF="D",TIMER=null,LIVE=null;
 function go(v,arg){if(!gate())return;VIEW=v;clearInterval(TIMER);document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.v==v));window.scrollTo(0,0);
   $("#view").innerHTML='<div class="empty">불러오는 중…</div>';
   ({kr:viewKR,us:viewUS,macro:viewMacro,news:viewNews,score:viewScore,find:viewFind,stock:viewStock})[v](arg).catch(e=>{$("#view").innerHTML=`<div class="card"><div class="empty">자료를 불러오지 못했습니다.<br><span class="note">${esc(e.message)}</span></div></div>`})}
@@ -211,7 +212,26 @@ function agg(bars,tf){if(tf=="D")return bars;const out=[];let cur=null,key=null;
    if(k!==key){if(cur)out.push(cur);key=k;cur=[b[0],b[1],b[2],b[3],b[4],b[5]||0]}else{cur[2]=Math.max(cur[2],b[2]);cur[3]=Math.min(cur[3],b[3]);cur[4]=b[4];cur[5]+=b[5]||0;cur[0]=b[0]}}
   if(cur)out.push(cur);return out}
 function ma(B,n){return B.map((_,i)=>i<n-1?null:B.slice(i-n+1,i+1).reduce((a,x)=>a+x[4],0)/n)}
-function drawChart(){const d=CUR;if(!d)return;const box=$("#chart");if(!box)return;
+const LVC={"적극 매수":"var(--up)","매수":"#FF8A95","매수대기":"#FFC2C8","관망":"var(--line)","매도":"#8EBBFF","적극 매도":"var(--dn)"};
+function drawMinute(){const box=$("#chart"),L=LIVE.tf[TF]||[];if(L.length<2){box.innerHTML='<div class="empty">분봉 자료가 없습니다</div>';return}
+  const N=Math.min(L.length,120),B=L.slice(-N),W=360,H=200,VH=40,P=6,top=8;
+  const hi=Math.max(...B.map(b=>Math.max(b[2],b[6]))),lo=Math.min(...B.map(b=>Math.min(b[3],b[6])));const y=v=>top+(hi-v)/(hi-lo||1)*(H-top-P),bw=W/N,vmax=Math.max(...B.map(b=>b[5]))||1;
+  let s=`<svg viewBox="0 0 ${W} ${H+VH+18}" width="100%" role="img" aria-label="${TF}분봉 차트">`;
+  B.forEach((b,i)=>{const x=i*bw+bw/2,c=b[4]>=b[1]?"var(--up)":"var(--dn)";s+=`<line x1="${x}" x2="${x}" y1="${y(b[2])}" y2="${y(b[3])}" stroke="${c}"/><rect x="${x-bw*.36}" y="${Math.min(y(b[1]),y(b[4]))}" width="${bw*.72}" height="${Math.max(1,Math.abs(y(b[1])-y(b[4])))}" fill="${c}"/><rect x="${x-bw*.36}" y="${H+VH-b[5]/vmax*(VH-4)}" width="${bw*.72}" height="${b[5]/vmax*(VH-4)}" fill="${c}" opacity=".45"/>`;
+   if(b[7])s+=`<path d="M${x} ${y(b[3])+4} l-5 9 h10 z" fill="var(--up)"><title>${esc(b[0]+" 매수 신호: "+b[7])}</title></path>`;
+   if(b[8])s+=`<path d="M${x} ${y(b[2])-4} l-5 -9 h10 z" fill="var(--dn)"><title>${esc(b[0]+" 매도 신호: "+b[8])}</title></path>`});
+  s+=`<polyline points="${B.map((b,i)=>`${(i*bw+bw/2).toFixed(1)},${y(b[6]).toFixed(1)}`).join(" ")}" fill="none" stroke="var(--ma20)" stroke-width="1.4" stroke-dasharray="3 2"/>`;
+  s+=`<text x="${W}" y="${top+8}" font-size="10" text-anchor="end">${fmt(hi)}</text><text x="${W}" y="${H-P}" font-size="10" text-anchor="end">${fmt(lo)}</text><text x="0" y="${H+VH+14}" font-size="10">${B[0][0]}</text><text x="${W}" y="${H+VH+14}" font-size="10" text-anchor="end">${B[N-1][0]}</text></svg>`;
+  const sig=B.filter(b=>b[7]||b[8]).slice(-6).reverse();
+  box.innerHTML=s+`<div class="lg"><span><i style="background:var(--ma20)"></i>VWAP(당일 평균단가)</span><span><span class="up">▲</span> 매수 신호</span><span><span class="dn">▼</span> 매도 신호</span></div>`+
+   (sig.length?`<div class="reasons" style="margin-top:6px">${sig.map(b=>`<div><b class="${b[7]?"up":"dn"}">${b[0]}</b><span>${esc(b[7]?"매수 · "+b[7]:"매도 · "+b[8])}</span></div>`).join("")}</div>`:"");
+  const J2=LIVE.judge||[];const jb=$("#judge");if(jb&&J2.length){const last=J2[J2.length-1];
+   jb.innerHTML=`<div style="font-size:13px;color:var(--mute);margin-top:6px">장중 판정 흐름 (5분마다)</div><div style="display:flex;height:14px;border-radius:4px;overflow:hidden;margin:6px 0">${J2.map(j=>`<div title="${esc(j[0]+" "+j[1])}" style="flex:1;background:${LVC[j[1]]||"var(--line)"}"></div>`).join("")}</div>
+    <div class="legend"><span>${esc(J2[0][0])}</span><span>마지막 ${esc(last[0])} · <b class="${/매수/.test(last[1])?"up":/매도/.test(last[1])?"dn":""}">${esc(last[1])}</b> (${last[2]>0?"+":""}${last[2]})</span></div>
+    ${(last[3]||[]).length?`<div class="note" style="margin-top:4px">${last[3].map(esc).join(" · ")}</div>`:""}
+    <div class="lg" style="margin-top:6px">${Object.entries(LVC).map(([k,c])=>`<span><i style="background:${c};height:8px"></i>${k}</span>`).join("")}</div>`}
+  document.querySelectorAll("#tfseg button").forEach(b=>b.classList.toggle("on",b.dataset.tf==TF))}
+function drawChart(){const d=CUR;if(!d)return;const box=$("#chart");if(!box)return;if(LIVE&&!["D","W","M"].includes(TF))return drawMinute();
   const all=agg(d.bars,TF);if(all.length<2){box.innerHTML='<div class="empty">차트 자료가 부족합니다</div>';return}
   const M5=ma(all,5),M20=ma(all,20),M60=ma(all,60);
   const N=Math.min(all.length,TF=="D"?90:TF=="W"?60:40),B=all.slice(-N),off=all.length-N;
@@ -237,7 +257,8 @@ function flowChart(fl){const L=fl.slice(-30);if(!L.length)return"";const W=360,H
   return ser.map(([n,k])=>{const mx=Math.max(...L.map(r=>Math.abs(r[k]||0)))||1;const bw=W/L.length;const sum=L.slice(-20).reduce((a,r)=>a+(r[k]||0),0)/1e8;
    return `<div style="display:flex;align-items:baseline;justify-content:space-between;font-size:13px;margin-top:8px"><span>${n}</span><span class="${sum>0?"up":"dn"}" style="font-weight:600">20일 ${sum>0?"+":""}${fmt(sum)}억</span></div><svg viewBox="0 0 ${W} ${Hh}" width="100%" role="img" aria-label="${n} 일별 순매수">${L.map((r,i)=>{const v=r[k]||0,h=Math.abs(v)/mx*(Hh/2-2);return `<rect x="${i*bw+1}" y="${v>0?Hh/2-h:Hh/2}" width="${bw-2}" height="${Math.max(.5,h)}" fill="${v>0?"var(--up)":"var(--dn)"}"/>`}).join("")}<line x1="0" x2="${W}" y1="${Hh/2}" y2="${Hh/2}" stroke="var(--line)"/></svg>`}).join("")}
 async function viewStock(a){
-  const m=a.m||"KR";const [d,rep]=await Promise.all([J(`data/${m}/${a.code}.json`),J("data/replay.json").catch(()=>null)]);
+  const m=a.m||"KR";const [d,rep,lv]=await Promise.all([J(`data/${m}/${a.code}.json`),J("data/replay.json").catch(()=>null),m=="KR"?J(`data/live/${a.code}.json`).catch(()=>null):Promise.resolve(null)]);
+  LIVE=lv;if(!LIVE&&TF!="D"&&TF!="W"&&TF!="M")TF="D";
   d.m=m;CUR=d;const s=d.signal||{};const last=d.bars.slice(-1)[0]||[];const close=s.close??last[4];
   let det=[];try{det=JSON.parse(s.detail||"[]")}catch(e){}
   if(!det.length&&s.reasons)det=String(s.reasons).split(" / ").map(t=>{const mm=t.match(/^([+-]?\d+(?:\.\d+)?)\s*(.*)$/);return mm?["",Number(mm[1]),mm[2]]:null}).filter(Boolean);
@@ -248,9 +269,9 @@ async function viewStock(a){
   <div><div class="big">${won(close,m)}</div><div style="font-size:15px;font-weight:600">${pct(s.change_pct)} <span class="mu" style="font-weight:400;font-size:12px">${esc(s.date||last[0]||"")} 종가</span></div></div>
   <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="chip${cls}">${esc(ac)} ${s.score!=null?Math.round(s.score)+"점":""}</span>${s.note?`<span class="chip n">${esc(s.note)}</span>`:""}</div>
   <div class="card" style="padding:12px 12px 10px;display:flex;flex-direction:column;gap:8px">
-   <div class="seg" id="tfseg">${["1","3","5","10","15","30"].map(t=>`<button disabled title="장중 분봉은 레이더 가동 중일 때 표시">${t}분</button>`).join("")}${[["D","일"],["W","주"],["M","월"]].map(([k,l])=>`<button data-tf="${k}" onclick="TF='${k}';drawChart()">${l}</button>`).join("")}</div>
-   <div id="chart"></div></div>
-  <div class="warnbox"><b>분봉 매수·매도 신호</b><span>1·3·5·10·15·30분봉 차트와 장중 6단계 판정(적극 매수~적극 매도)은 레이더 PC에서 1분마다 계산됩니다. 앱으로 실시간 전송하는 연결은 준비 중입니다.${rb?` 참고로 최근 사후 검증에서 장중 '매수' 판정은 30분 뒤 적중 ${Math.round(rb.new.hit)}%, 비용 뺀 평균 ${rb.new.net.toFixed(2)}%였습니다.`:""}</span></div>
+   <div class="seg" id="tfseg">${["1","3","5","10","15","30"].map(t=>`<button data-tf="${t}" ${LIVE?"":"disabled"} onclick="TF='${t}';drawChart()">${t}분</button>`).join("")}${[["D","일"],["W","주"],["M","월"]].map(([k,l])=>`<button data-tf="${k}" onclick="TF='${k}';drawChart()">${l}</button>`).join("")}</div>
+   <div id="chart"></div>${LIVE?`<div id="judge"></div>`:""}</div>
+  <div class="warnbox"><b>분봉 매수·매도 신호</b><span>${LIVE?`${esc(LIVE.day)} 장중 1·3·5·10·15·30분봉과 5분마다의 6단계 판정(그 시점까지의 데이터만 사용)입니다. 장마감 뒤 갱신됩니다.`:"이 종목은 아직 분봉 자료가 없습니다. 분봉은 매수후보·관심·매도경고·거래대금 상위 약 60종목에 대해 매일 장마감 뒤 올라옵니다."}${rb?` 최근 사후 검증에서 장중 '매수' 판정은 30분 뒤 적중 ${Math.round(rb.new.hit)}%, 비용 뺀 평균 ${rb.new.net.toFixed(2)}%였습니다. 참고만 하세요.`:""}</span></div>
   ${s.entry?`<div class="grid3"><div class="cell"><span>진입</span><b>${fmt(s.entry,m=="US"?2:0)}</b></div><div class="cell"><span>손절</span><b class="dn">${fmt(s.stop,m=="US"?2:0)}</b></div><div class="cell"><span>1차 목표</span><b class="up">${fmt(s.target,m=="US"?2:0)}</b></div></div>`:""}
   ${m=="KR"&&d.flows.length?`<div class="card"><h3>투자자별 순매수 · 최근 30일 (막대) · 20일 합계</h3>${flowChart(d.flows)}</div>`:""}
   ${det.length?`<div class="card reasons"><h3>점수 근거</h3>${det.slice().sort((x,y)=>Math.abs(y[1])-Math.abs(x[1])).slice(0,14).map(x=>`<div><b class="${x[1]>0?"up":"dn"}">${x[1]>0?"+":""}${Number(x[1]).toFixed(1)}</b><span>${esc(x[2])}</span></div>`).join("")}</div>`:""}
