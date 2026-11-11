@@ -59,6 +59,7 @@ header b{font-size:17px;letter-spacing:-.02em;white-space:nowrap}
 .hero .mu{color:rgba(255,255,255,.75)}.hero .hcash{font-family:Inter,"Pretendard Variable",sans-serif;font-size:32px;font-weight:800;letter-spacing:-1px;color:#fff}
 .hero .bar{background:rgba(255,255,255,.25)}.hero .bar i{background:#fff}.hero div[style*="color:var(--sub)"],.hero div[style*="color:var(--mute)"]{color:rgba(255,255,255,.82)!important}
 .cell.tgt{background:var(--accBg)}.cell.tgt span{color:var(--accD)}.cell.tgt b{color:var(--accD)!important}.cell.stp{background:var(--upA)}.cell.stp span,.cell.stp b{color:var(--risk)!important}
+.sc.b{background:linear-gradient(125deg,#E53950,#FF6B5E);color:#fff}.grade.b{background:linear-gradient(140deg,#E53950,#FF6B5E);box-shadow:0 8px 20px rgba(229,57,80,.28)}body[data-mt=dark] .sc.b,body[data-mt=dark] .grade.b{background:linear-gradient(125deg,#FF4D66,#FF7A6B)}
 .chip{display:inline-block;font-size:13px;font-weight:700;border-radius:8px;padding:6px 10px;background:var(--upA);color:var(--up)}
 .chip.w{background:var(--dnA);color:var(--dn)}.chip.n{background:var(--soft);color:var(--sub)}
 .note{font-size:11px;color:var(--mute);line-height:1.55}
@@ -147,7 +148,7 @@ function counts(rows){const c={};rows.forEach(r=>c[r[3]]=(c[r[3]]||0)+1);return 
 function distBar(c){const k=[["매수후보","var(--up)"],["관심","#FFB3BA"],["중립","var(--line)"],["주의","#A8CBFF"],["매도경고","var(--dn)"]];
   return `<div class="dist">${k.map(([n,col])=>`<div style="flex:${c[n]||0};background:${col}"></div>`).join("")}</div><div class="legend">${k.map(([n])=>`<span${n=="매수후보"?' class="up"':n=="매도경고"?' class="dn"':""}>${n=="매도경고"?"경고":n} ${c[n]||0}</span>`).join("")}</div>`}
 function rowsHTML(rows,m){if(!rows.length)return '<div class="empty">지금 이 조건에 맞는 종목이 없습니다. 장마감 뒤 다시 확인해 주세요.</div>';
-  return '<div class="list">'+rows.map(r=>{const w=r[3]=="매도경고"||r[3]=="주의"?" w":r[3]=="중립"?" n":"";return `<button class="row" onclick="go('stock',{code:'${esc(r[0])}',m:'${m}'})"><span class="sc${w}">${Math.round(r[2])}</span>
+  return '<div class="list">'+rows.map(r=>{const w=r[3]=="매수후보"?" b":r[3]=="매도경고"||r[3]=="주의"?" w":r[3]=="중립"?" n":"";return `<button class="row" onclick="go('stock',{code:'${esc(r[0])}',m:'${m}'})"><span class="sc${w}">${r[2]>0?"+":""}${Math.round(r[2])}</span>
   <span class="nm"><b>${esc(r[1])}</b><span>${SEG=="거래대금"&&r[8]?`거래대금 ${money(r[8],m)} · ${esc(r[3])}`:`${esc(r[3])} · ${esc(r[7]||String(r[6]||"").replace(/^[+-]?\d+(\.\d+)?\s*/,""))}`}</span></span>
   <span class="px"><b>${won(r[4],m)}</b>${pct(r[5])}</span></button>`}).join("")+'</div>'}
 function pickRows(rows,seg){let L;
@@ -296,7 +297,7 @@ async function viewStock(a){
   d.m=m;CUR=d;const s=d.signal||{};const last=d.bars.slice(-1)[0]||[];const close=s.close??last[4];
   let det=[];try{det=JSON.parse(s.detail||"[]")}catch(e){}
   if(!det.length&&s.reasons)det=String(s.reasons).split(" / ").map(t=>{const mm=t.match(/^([+-]?\d+(?:\.\d+)?)\s*(.*)$/);return mm?["",Number(mm[1]),mm[2]]:null}).filter(Boolean);
-  const ac=s.action||"-",cls=ac=="매수후보"||ac=="관심"?"":ac=="중립"?" n":" w";
+  const ac=s.action||"-",cls=ac=="매수후보"?" b":ac=="관심"?"":ac=="중립"?" n":" w";
   const R=rep&&rep.by_h&&rep.by_h.r30?rep.by_h.r30.rows:[];const rb=R.find(x=>x.level=="매수"),rs=R.find(x=>x.level=="매도");
   $("#view").innerHTML=`
   <div style="display:flex;align-items:center;gap:8px"><button class="iconbtn" onclick="go('${m=="US"?"us":"kr"}')" aria-label="목록으로"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button><span class="mu" style="font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d.name)} · ${esc(d.code)}</span></div>
