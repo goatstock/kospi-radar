@@ -128,7 +128,7 @@ function agree(){shell(`<div class="card" style="display:flex;flex-direction:col
 function ended(msg){shell(`<div class="card" style="display:flex;flex-direction:column;gap:12px"><b style="font-size:22px;letter-spacing:-.02em">체험이 끝났습니다</b>
   <div style="font-size:14px;color:var(--sub);line-height:1.6">${esc(msg)} 써 주셔서 감사합니다.<br>정식판 소식은 이 링크를 보내 드린 분께 문의해 주세요.</div>${DISC}</div>`);$("#badge").textContent="체험 종료";return false}
 /* routing */
-let VIEW="kr",SEG="매수후보",CUR=null,TF="D",TIMER=null,LIVE=null;
+let VIEW="kr",SEG="매수후보",CUR=null,TF="D",TIMER=null,LIVE=null,ZN=null,ZO=0;
 function go(v,arg){if(!gate())return;VIEW=v;clearInterval(TIMER);document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.v==v));window.scrollTo(0,0);
   $("#view").innerHTML='<div class="empty">불러오는 중…</div>';
   ({kr:viewKR,us:viewUS,macro:viewMacro,news:viewNews,score:viewScore,find:viewFind,stock:viewStock})[v](arg).catch(e=>{$("#view").innerHTML=`<div class="card"><div class="empty">자료를 불러오지 못했습니다.<br><span class="note">${esc(e.message)}</span></div></div>`})}
@@ -213,20 +213,36 @@ function agg(bars,tf){if(tf=="D")return bars;const out=[];let cur=null,key=null;
    if(k!==key){if(cur)out.push(cur);key=k;cur=[b[0],b[1],b[2],b[3],b[4],b[5]||0]}else{cur[2]=Math.max(cur[2],b[2]);cur[3]=Math.min(cur[3],b[3]);cur[4]=b[4];cur[5]+=b[5]||0;cur[0]=b[0]}}
   if(cur)out.push(cur);return out}
 function ma(B,n){return B.map((_,i)=>i<n-1?null:B.slice(i-n+1,i+1).reduce((a,x)=>a+x[4],0)/n)}
+function win(total,def){let n=ZN==null?Math.min(total,def):Math.max(10,Math.min(total,ZN));ZO=Math.max(0,Math.min(ZO,total-n));const end=total-ZO;return [end-n,end,n]}
+function zoomBar(){return `<div style="display:flex;gap:6px;align-items:center;margin-top:6px"><button class="iconbtn" aria-label="축소(더 많은 봉)" onclick="zoomBy(1.5)">－</button><button class="iconbtn" aria-label="확대(봉 크게)" onclick="zoomBy(1/1.5)">＋</button><button class="iconbtn" aria-label="과거로" onclick="panBy(1)">‹</button><button class="iconbtn" aria-label="최근으로" onclick="panBy(-1)">›</button><button class="pill" style="height:30px;font-size:12px;background:var(--soft);color:var(--sub)" onclick="ZN=null;ZO=0;drawChart()">처음 화면</button><span class="note" style="margin-left:auto">두 손가락 확대·밀어서 이동</span></div>`}
+function judgeAt(t,tf){const J2=(LIVE&&LIVE.judge)||[];const [h,m]=t.split(":").map(Number),end=h*60+m+tf-1;let r=null;for(const j of J2){const [jh,jm]=j[0].split(":").map(Number);if(jh*60+jm<=end)r=j[1];else break}return r}
+function curN(){const svg=$("#chart svg");return svg?Number(svg.dataset.n):60}
+function zoomBy(f){ZN=Math.round(curN()*f);drawChart()}
+function panBy(dir){const n=curN();ZO=Math.max(0,ZO+Math.round(dir*n*0.4));drawChart()}
+function bindZoom(){const svg=$("#chart svg");if(!svg)return;const n=Number(svg.dataset.n);
+  svg.style.touchAction="none";const pts=new Map();let startX=null,startO=0,startD=null,startN=n;
+  svg.addEventListener("wheel",e=>{e.preventDefault();ZN=Math.round(n*(e.deltaY>0?1.25:0.8));drawChart()},{passive:false});
+  svg.addEventListener("pointerdown",e=>{svg.setPointerCapture(e.pointerId);pts.set(e.pointerId,e.clientX);if(pts.size==1){startX=e.clientX;startO=ZO}else if(pts.size==2){const v=[...pts.values()];startD=Math.abs(v[0]-v[1]);startN=n}});
+  svg.addEventListener("pointermove",e=>{if(!pts.has(e.pointerId))return;pts.set(e.pointerId,e.clientX);const w=svg.getBoundingClientRect().width||1;
+    if(pts.size==2&&startD){const v=[...pts.values()],d=Math.abs(v[0]-v[1]);if(d>10){const nn=Math.round(startN*startD/d);if(Math.abs(nn-curN())>=2){ZN=nn;drawChart()}}}
+    else if(pts.size==1&&startX!=null){const dx=e.clientX-startX,bars=Math.round(dx/w*n);if(bars!==0&&ZO!==Math.max(0,startO+bars)){ZO=Math.max(0,startO+bars);drawChart()}}});
+  const up=e=>{pts.delete(e.pointerId);if(pts.size<2)startD=null;if(pts.size==0)startX=null};svg.addEventListener("pointerup",up);svg.addEventListener("pointercancel",up)}
 const LVC={"적극 매수":"var(--up)","매수":"#FF8A95","매수대기":"#FFC2C8","관망":"var(--line)","매도":"#8EBBFF","적극 매도":"var(--dn)"};
 function drawMinute(){const box=$("#chart"),L=LIVE.tf[TF]||[];if(L.length<2){box.innerHTML='<div class="empty">분봉 자료가 없습니다</div>';return}
-  const N=Math.min(L.length,120),B=L.slice(-N),W=360,H=200,VH=40,P=6,top=8;
+  const [a0,a1,N]=win(L.length,120),B=L.slice(a0,a1),W=360,H=200,VH=40,P=6,top=8;
   const hi=Math.max(...B.map(b=>Math.max(b[2],b[6]))),lo=Math.min(...B.map(b=>Math.min(b[3],b[6])));const y=v=>top+(hi-v)/(hi-lo||1)*(H-top-P),bw=W/N,vmax=Math.max(...B.map(b=>b[5]))||1;
-  let s=`<svg viewBox="0 0 ${W} ${H+VH+18}" width="100%" role="img" aria-label="${TF}분봉 차트">`;
+  let s=`<svg data-n="${N}" viewBox="0 0 ${W} ${H+VH+18}" width="100%" role="img" aria-label="${TF}분봉 차트">`;
   B.forEach((b,i)=>{const x=i*bw+bw/2,c=b[4]>=b[1]?"var(--up)":"var(--dn)";s+=`<line x1="${x}" x2="${x}" y1="${y(b[2])}" y2="${y(b[3])}" stroke="${c}"/><rect x="${x-bw*.36}" y="${Math.min(y(b[1]),y(b[4]))}" width="${bw*.72}" height="${Math.max(1,Math.abs(y(b[1])-y(b[4])))}" fill="${c}"/><rect x="${x-bw*.36}" y="${H+VH-b[5]/vmax*(VH-4)}" width="${bw*.72}" height="${b[5]/vmax*(VH-4)}" fill="${c}" opacity=".45"/>`;
    if(b[7])s+=`<path d="M${x} ${y(b[3])+4} l-5 9 h10 z" fill="var(--up)"><title>${esc(b[0]+" 매수 신호: "+b[7])}</title></path>`;
-   if(b[8])s+=`<path d="M${x} ${y(b[2])-4} l-5 -9 h10 z" fill="var(--dn)"><title>${esc(b[0]+" 매도 신호: "+b[8])}</title></path>`});
+   if(b[8])s+=`<path d="M${x} ${y(b[2])-4} l-5 -9 h10 z" fill="var(--dn)"><title>${esc(b[0]+" 매도 신호: "+b[8])}</title></path>`;
+   if(Number(TF)>=10&&!b[7]&&!b[8]){const lv=judgeAt(b[0],Number(TF));if(lv&&/매수$/.test(lv)&&lv!="매수대기")s+=`<circle cx="${x}" cy="${y(b[3])+8}" r="3.5" fill="var(--up)"><title>${esc(b[0]+" 장중 판정: "+lv)}</title></circle>`;
+    else if(lv&&/매도/.test(lv))s+=`<circle cx="${x}" cy="${y(b[2])-8}" r="3.5" fill="var(--dn)"><title>${esc(b[0]+" 장중 판정: "+lv)}</title></circle>`}});
   s+=`<polyline points="${B.map((b,i)=>`${(i*bw+bw/2).toFixed(1)},${y(b[6]).toFixed(1)}`).join(" ")}" fill="none" stroke="var(--ma20)" stroke-width="1.4" stroke-dasharray="3 2"/>`;
   s+=`<text x="${W}" y="${top+8}" font-size="10" text-anchor="end">${fmt(hi)}</text><text x="${W}" y="${H-P}" font-size="10" text-anchor="end">${fmt(lo)}</text><text x="0" y="${H+VH+14}" font-size="10">${B[0][0]}</text><text x="${W}" y="${H+VH+14}" font-size="10" text-anchor="end">${B[N-1][0]}</text></svg>`;
   const sig=B.filter(b=>b[7]||b[8]).slice(-6).reverse();
-  box.innerHTML=s+`<div class="lg"><span><i style="background:var(--ma20)"></i>VWAP(당일 평균단가)</span><span><span class="up">▲</span> 매수 신호</span><span><span class="dn">▼</span> 매도 신호</span></div>`+
-   (sig.length?`<div class="reasons" style="margin-top:6px">${sig.map(b=>`<div><b class="${b[7]?"up":"dn"}">${b[0]}</b><span>${esc(b[7]?"매수 · "+b[7]:"매도 · "+b[8])}</span></div>`).join("")}</div>`:"");
-  const J2=LIVE.judge||[];const jb=$("#judge");if(jb&&J2.length){const last=J2[J2.length-1];
+  box.innerHTML=s+`<div class="lg"><span><i style="background:var(--ma20)"></i>VWAP(당일 평균단가)</span><span><span class="up">▲</span> 매수 신호</span><span><span class="dn">▼</span> 매도 신호</span>${Number(TF)>=10?'<span><span class="up">●</span>/<span class="dn">●</span> 그 봉 마감 때 장중 판정(매수·매도)</span>':""}</div>`+
+   zoomBar()+(sig.length?`<div class="reasons" style="margin-top:6px">${sig.map(b=>`<div><b class="${b[7]?"up":"dn"}">${b[0]}</b><span>${esc(b[7]?"매수 · "+b[7]:"매도 · "+b[8])}</span></div>`).join("")}</div>`:"");
+  bindZoom();const J2=LIVE.judge||[];const jb=$("#judge");if(jb&&J2.length){const last=J2[J2.length-1];
    jb.innerHTML=`<div style="font-size:13px;color:var(--mute);margin-top:6px">장중 판정 흐름 (5분마다)</div><div style="display:flex;height:14px;border-radius:4px;overflow:hidden;margin:6px 0">${J2.map(j=>`<div title="${esc(j[0]+" "+j[1])}" style="flex:1;background:${LVC[j[1]]||"var(--line)"}"></div>`).join("")}</div>
     <div class="legend"><span>${esc(J2[0][0])}</span><span>마지막 ${esc(last[0])} · <b class="${/매수/.test(last[1])?"up":/매도/.test(last[1])?"dn":""}">${esc(last[1])}</b> (${last[2]>0?"+":""}${last[2]})</span></div>
     ${(last[3]||[]).length?`<div class="note" style="margin-top:4px">${last[3].map(esc).join(" · ")}</div>`:""}
@@ -235,12 +251,12 @@ function drawMinute(){const box=$("#chart"),L=LIVE.tf[TF]||[];if(L.length<2){box
 function drawChart(){const d=CUR;if(!d)return;const box=$("#chart");if(!box)return;if(LIVE&&!["D","W","M"].includes(TF))return drawMinute();
   const all=agg(d.bars,TF);if(all.length<2){box.innerHTML='<div class="empty">차트 자료가 부족합니다</div>';return}
   const M5=ma(all,5),M20=ma(all,20),M60=ma(all,60);
-  const N=Math.min(all.length,TF=="D"?90:TF=="W"?60:40),B=all.slice(-N),off=all.length-N;
+  const [b0,b1,N]=win(all.length,TF=="D"?90:TF=="W"?60:40),B=all.slice(b0,b1),off=b0;
   const W=360,H=200,VH=44,P=6,top=8;
   const vals=B.flatMap(b=>[b[2],b[3]]).concat([M5,M20,M60].flatMap(L=>L.slice(off).filter(v=>v!=null)));
   const hi=Math.max(...vals),lo=Math.min(...vals);const y=v=>top+(hi-v)/(hi-lo||1)*(H-top-P);const bw=W/N;
   const vmax=Math.max(...B.map(b=>b[5]||0))||1;
-  let s=`<svg viewBox="0 0 ${W} ${H+VH+18}" width="100%" role="img" aria-label="${esc(d.name)} ${TF=="D"?"일봉":TF=="W"?"주봉":"월봉"} 차트">`;
+  let s=`<svg data-n="${N}" viewBox="0 0 ${W} ${H+VH+18}" width="100%" role="img" aria-label="${esc(d.name)} ${TF=="D"?"일봉":TF=="W"?"주봉":"월봉"} 차트">`;
   [0.25,0.5,0.75].forEach(f=>{const yy=top+(H-top-P)*f;s+=`<line x1="0" x2="${W}" y1="${yy}" y2="${yy}" stroke="var(--line)" stroke-width="0.5"/>`});
   B.forEach((b,i)=>{const x=i*bw+bw/2,up=b[4]>=b[1],c=up?"var(--up)":"var(--dn)";
    s+=`<line x1="${x}" x2="${x}" y1="${y(b[2])}" y2="${y(b[3])}" stroke="${c}" stroke-width="1"/><rect x="${x-bw*.36}" y="${Math.min(y(b[1]),y(b[4]))}" width="${bw*.72}" height="${Math.max(1,Math.abs(y(b[1])-y(b[4])))}" fill="${c}"/>`;
@@ -251,15 +267,23 @@ function drawChart(){const d=CUR;if(!d)return;const box=$("#chart");if(!box)retu
    if(a0<=b0&&a1>b1)s+=`<path d="M${x} ${y(B[i][3])+4} l-5 9 h10 z" fill="var(--up)"/>`;
    if(a0>=b0&&a1<b1)s+=`<path d="M${x} ${y(B[i][2])-4} l-5 -9 h10 z" fill="var(--dn)"/>`}
   s+=`<text x="${W}" y="${top+8}" font-size="10" text-anchor="end">${fmt(hi,d.m=="US"?2:0)}</text><text x="${W}" y="${H-P}" font-size="10" text-anchor="end">${fmt(lo,d.m=="US"?2:0)}</text>`;
-  s+=`<text x="0" y="${H+VH+14}" font-size="10">${B[0][0]}</text><text x="${W}" y="${H+VH+14}" font-size="10" text-anchor="end">${B[N-1][0]}</text></svg>`;
-  box.innerHTML=s+`<div class="lg"><span><i style="background:var(--ma5)"></i>5이평</span><span><i style="background:var(--ma20)"></i>20이평</span><span><i style="background:var(--ma60)"></i>60이평</span><span><span class="up">▲</span> 골든크로스(5>20)</span><span><span class="dn">▼</span> 데드크로스</span></div>`;
+  if(ZO==0)s+=`<rect x="${(N-1)*bw}" y="${top}" width="${bw}" height="${H+VH-top}" fill="var(--acc)" opacity=".10"/>`;
+  s+=`<text x="0" y="${H+VH+14}" font-size="10">${B[0][0]}</text><text x="${W}" y="${H+VH+14}" font-size="10" text-anchor="end" ${ZO==0?'style="fill:var(--acc);font-weight:700"':""}>${ZO==0&&B[N-1][0]==(d.signal||{}).date?"오늘 ":""}${B[N-1][0]}</text></svg>`;
+  box.innerHTML=s+`<div class="lg"><span><i style="background:var(--ma5)"></i>5이평</span><span><i style="background:var(--ma20)"></i>20이평</span><span><i style="background:var(--ma60)"></i>60이평</span><span><span class="up">▲</span> 골든크로스(5>20)</span><span><span class="dn">▼</span> 데드크로스</span></div>`+zoomBar();bindZoom();
   document.querySelectorAll("#tfseg button").forEach(b=>b.classList.toggle("on",b.dataset.tf==TF))}
-function flowChart(fl){const L=fl.slice(-30);if(!L.length)return"";const W=360,Hh=60;const ser=[["외국인",1],["기관",2],["개인",3]];
-  return ser.map(([n,k])=>{const mx=Math.max(...L.map(r=>Math.abs(r[k]||0)))||1;const bw=W/L.length;const sum=L.slice(-20).reduce((a,r)=>a+(r[k]||0),0)/1e8;
-   return `<div style="display:flex;align-items:baseline;justify-content:space-between;font-size:13px;margin-top:8px"><span>${n}</span><span class="${sum>0?"up":"dn"}" style="font-weight:600">20일 ${sum>0?"+":""}${fmt(sum)}억</span></div><svg viewBox="0 0 ${W} ${Hh}" width="100%" role="img" aria-label="${n} 일별 순매수">${L.map((r,i)=>{const v=r[k]||0,h=Math.abs(v)/mx*(Hh/2-2);return `<rect x="${i*bw+1}" y="${v>0?Hh/2-h:Hh/2}" width="${bw-2}" height="${Math.max(.5,h)}" fill="${v>0?"var(--up)":"var(--dn)"}"/>`}).join("")}<line x1="0" x2="${W}" y1="${Hh/2}" y2="${Hh/2}" stroke="var(--line)"/></svg>`}).join("")}
+function flowChart(fl,asof){const L=fl.slice(-30);if(!L.length)return"";const W=360,Hh=60,bw=W/L.length;const ser=[["외국인",1],["기관",2],["개인",3]];
+  const last=L[L.length-1][0],isToday=last==asof,lx=(L.length-1)*bw;
+  const md=d=>String(d).slice(5).replace("-","/");
+  return ser.map(([n,k],si)=>{const mx=Math.max(...L.map(r=>Math.abs(r[k]||0)))||1;const sum=L.slice(-20).reduce((a,r)=>a+(r[k]||0),0)/1e8;const tv=(L[L.length-1][k]||0)/1e8;
+   return `<div style="display:flex;align-items:baseline;justify-content:space-between;font-size:13px;margin-top:8px"><span>${n} <span class="mu" style="font-size:12px">${isToday?"오늘":md(last)} ${tv>0?"+":""}${fmt(tv)}억</span></span><span class="${sum>0?"up":"dn"}" style="font-weight:600">20일 ${sum>0?"+":""}${fmt(sum)}억</span></div><svg viewBox="0 0 ${W} ${Hh+(si==2?16:0)}" width="100%" role="img" aria-label="${n} 일별 순매수">
+    <rect x="${lx}" y="0" width="${bw}" height="${Hh}" fill="var(--acc)" opacity=".10"/>
+    ${L.map((r,i)=>{const v=r[k]||0,h=Math.abs(v)/mx*(Hh/2-2);return `<rect x="${i*bw+1}" y="${v>0?Hh/2-h:Hh/2}" width="${bw-2}" height="${Math.max(.5,h)}" fill="${v>0?"var(--up)":"var(--dn)"}"><title>${md(r[0])} ${n} ${v>0?"+":""}${fmt(v/1e8)}억</title></rect>`}).join("")}
+    <line x1="0" x2="${W}" y1="${Hh/2}" y2="${Hh/2}" stroke="var(--line)"/>
+    ${si==2?`<text x="0" y="${Hh+13}" font-size="10">${md(L[0][0])}</text><text x="${W/2}" y="${Hh+13}" font-size="10" text-anchor="middle">${md(L[Math.floor(L.length/2)][0])}</text><text x="${W}" y="${Hh+13}" font-size="10" text-anchor="end" style="fill:var(--acc);font-weight:700">${isToday?"오늘 ":""}${md(last)} ▲</text>`:""}</svg>`}).join("")+
+   `<div class="note" style="margin-top:4px">맨 오른쪽 옅은 칸이 ${isToday?"오늘":"가장 최근 거래일("+md(last)+")"}입니다. 왼쪽으로 갈수록 과거입니다.</div>`}
 async function viewStock(a){
   const m=a.m||"KR";const [d,rep,lv]=await Promise.all([J(`data/${m}/${a.code}.json`),J("data/replay.json").catch(()=>null),m=="KR"?J(`data/live/${a.code}.json`).catch(()=>null):Promise.resolve(null)]);
-  LIVE=lv;if(!LIVE&&TF!="D"&&TF!="W"&&TF!="M")TF="D";
+  LIVE=lv;ZN=null;ZO=0;if(!LIVE&&TF!="D"&&TF!="W"&&TF!="M")TF="D";
   d.m=m;CUR=d;const s=d.signal||{};const last=d.bars.slice(-1)[0]||[];const close=s.close??last[4];
   let det=[];try{det=JSON.parse(s.detail||"[]")}catch(e){}
   if(!det.length&&s.reasons)det=String(s.reasons).split(" / ").map(t=>{const mm=t.match(/^([+-]?\d+(?:\.\d+)?)\s*(.*)$/);return mm?["",Number(mm[1]),mm[2]]:null}).filter(Boolean);
@@ -270,11 +294,11 @@ async function viewStock(a){
   <div><div class="big">${won(close,m)}</div><div style="font-size:15px;font-weight:600">${pct(s.change_pct)} <span class="mu" style="font-weight:400;font-size:12px">${esc(s.date||last[0]||"")} 종가</span></div></div>
   <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="chip${cls}">${esc(ac)} ${s.score!=null?Math.round(s.score)+"점":""}</span>${s.note?`<span class="chip n">${esc(s.note)}</span>`:""}</div>
   <div class="card" style="padding:12px 12px 10px;display:flex;flex-direction:column;gap:8px">
-   <div class="seg" id="tfseg">${["1","3","5","10","15","30"].map(t=>`<button data-tf="${t}" ${LIVE?"":"disabled"} onclick="TF='${t}';drawChart()">${t}분</button>`).join("")}${[["D","일"],["W","주"],["M","월"]].map(([k,l])=>`<button data-tf="${k}" onclick="TF='${k}';drawChart()">${l}</button>`).join("")}</div>
+   <div class="seg" id="tfseg">${["1","3","5","10","15","30"].map(t=>`<button data-tf="${t}" ${LIVE?"":"disabled"} onclick="TF='${t}';ZN=null;ZO=0;drawChart()">${t}분</button>`).join("")}${[["D","일"],["W","주"],["M","월"]].map(([k,l])=>`<button data-tf="${k}" onclick="TF='${k}';ZN=null;ZO=0;drawChart()">${l}</button>`).join("")}</div>
    <div id="chart"></div>${LIVE?`<div id="judge"></div>`:""}</div>
   <div class="warnbox"><b>분봉 매수·매도 신호</b><span>${LIVE?`${esc(LIVE.day)} 장중 1·3·5·10·15·30분봉과 5분마다의 6단계 판정(그 시점까지의 데이터만 사용)입니다. 장마감 뒤 갱신됩니다.`:"이 종목은 아직 분봉 자료가 없습니다. 분봉은 매수후보·관심·매도경고·거래대금 상위 약 60종목에 대해 매일 장마감 뒤 올라옵니다."}${rb?` 최근 사후 검증에서 장중 '매수' 판정은 30분 뒤 적중 ${Math.round(rb.new.hit)}%, 비용 뺀 평균 ${rb.new.net.toFixed(2)}%였습니다. 참고만 하세요.`:""}</span></div>
   ${s.entry?`<div class="grid3"><div class="cell"><span>진입</span><b>${fmt(s.entry,m=="US"?2:0)}</b></div><div class="cell"><span>손절</span><b class="dn">${fmt(s.stop,m=="US"?2:0)}</b></div><div class="cell"><span>1차 목표</span><b class="up">${fmt(s.target,m=="US"?2:0)}</b></div></div>`:""}
-  ${m=="KR"&&d.flows.length?`<div class="card"><h3>투자자별 순매수 · 최근 30일 (막대) · 20일 합계</h3>${flowChart(d.flows)}</div>`:""}
+  ${m=="KR"&&d.flows.length?`<div class="card"><h3>투자자별 순매수 · 최근 30일 (막대) · 20일 합계</h3>${flowChart(d.flows,s.date)}</div>`:""}
   ${det.length?`<div class="card reasons"><h3>점수 근거</h3>${det.slice().sort((x,y)=>Math.abs(y[1])-Math.abs(x[1])).slice(0,14).map(x=>`<div><b class="${x[1]>0?"up":"dn"}">${x[1]>0?"+":""}${Number(x[1]).toFixed(1)}</b><span>${esc(x[2])}</span></div>`).join("")}</div>`:""}
   ${d.news.length?`<div class="card news"><h3>관련 뉴스</h3>${d.news.map(n=>`<a href="${esc(n[2])}" target="_blank" rel="noopener"><span>${n[3]>0?'<span class="tag p">호재</span>':n[3]<0?'<span class="tag m">악재</span>':""}${esc(n[1])}</span><small>${esc(String(n[0]||"").replace("T"," ").slice(5,16))} · ${esc(n[4]||"")}</small></a>`).join("")}</div>`:""}
   ${DISC}`;
