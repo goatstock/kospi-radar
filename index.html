@@ -89,6 +89,7 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmt=(v,d)=>v==null||isNaN(v)?"-":Number(v).toLocaleString("ko-KR",{maximumFractionDigits:d??0});
 const pct=v=>v==null?'<span class="mu">-</span>':`<span class="${v>0?"up":v<0?"dn":""}">${v>0?"+":""}${Number(v).toFixed(2)}%</span>`;
+const money=(v,m)=>m=="US"?(v>=1e9?"$"+(v/1e9).toFixed(1)+"B":"$"+(v/1e6).toFixed(0)+"M"):(v>=1e12?(v/1e12).toFixed(2)+"조원":Math.round(v/1e8).toLocaleString("ko-KR")+"억원");
 const won=(v,m)=>m=="US"?"$"+fmt(v,2):fmt(v)+"원";
 const CACHE={};
 const J=p=>CACHE[p]||(CACHE[p]=fetch(p).then(r=>{if(!r.ok)throw new Error("자료를 찾지 못했습니다");return r.json()}).catch(e=>{delete CACHE[p];throw e}));
@@ -138,7 +139,7 @@ function distBar(c){const k=[["매수후보","var(--up)"],["관심","#FFB3BA"],[
   return `<div class="dist">${k.map(([n,col])=>`<div style="flex:${c[n]||0};background:${col}"></div>`).join("")}</div><div class="legend">${k.map(([n])=>`<span${n=="매수후보"?' class="up"':n=="매도경고"?' class="dn"':""}>${n=="매도경고"?"경고":n} ${c[n]||0}</span>`).join("")}</div>`}
 function rowsHTML(rows,m){if(!rows.length)return '<div class="empty">해당 종목이 없습니다</div>';
   return '<div class="list">'+rows.map(r=>{const w=r[3]=="매도경고"||r[3]=="주의"?" w":r[3]=="중립"?" n":"";return `<button class="row" onclick="go('stock',{code:'${esc(r[0])}',m:'${m}'})"><span class="sc${w}">${Math.round(r[2])}</span>
-  <span class="nm"><b>${esc(r[1])}</b><span>${esc(r[3])} · ${esc(r[7]||String(r[6]||"").replace(/^[+-]?\d+(\.\d+)?\s*/,""))}</span></span>
+  <span class="nm"><b>${esc(r[1])}</b><span>${SEG=="거래대금"&&r[8]?`거래대금 ${money(r[8],m)} · ${esc(r[3])}`:`${esc(r[3])} · ${esc(r[7]||String(r[6]||"").replace(/^[+-]?\d+(\.\d+)?\s*/,""))}`}</span></span>
   <span class="px"><b>${won(r[4],m)}</b>${pct(r[5])}</span></button>`}).join("")+'</div>'}
 function pickRows(rows,seg){let L;
   if(seg=="거래대금")L=rows.slice().sort((a,b)=>(b[8]||0)-(a[8]||0));
@@ -155,10 +156,10 @@ async function viewKR(){
    <div style="font-size:12px;color:var(--mute);line-height:1.6;margin-top:6px">${(r.reasons||[]).map(esc).join("<br>")}</div></div>
   ${fl.length?`<div class="card"><h3>코스피 투자자별 순매수 (억원, 시장 전체)</h3><div class="tbl"><table><tr><th>일자</th><th>외국인</th><th>기관</th><th>개인</th></tr>${fl.slice(0,7).map(f=>`<tr><td>${esc(String(f.date).slice(5))}</td>${["frgn","inst","indiv"].map(k=>`<td class="${f[k]>0?"up":"dn"}">${f[k]>0?"+":""}${fmt(f[k])}</td>`).join("")}</tr>`).join("")}</table></div></div>`:""}
   <div class="card"><h3>${ix.rows.length}종목 신호 분포 · ${esc(ix.asof)}</h3>${distBar(counts(ix.rows))}</div>
-  <div class="seg" id="seg">${["매수후보","관심","매도경고","주의","거래대금"].map(a=>`<button class="${a==SEG?"on":""}" onclick="SEG='${a}';krList()">${a}</button>`).join("")}</div>
+  <div class="seg" id="seg">${["매수후보","관심","매도경고","주의","거래대금"].map(a=>`<button class="${a==SEG?"on":""}" data-s="${a}" onclick="SEG='${a}';krList()">${a=="거래대금"?"거래대금 상위":a}</button>`).join("")}</div>
   <div class="card" id="klist"></div>${DISC}`;
   krList()}
-async function krList(){const ix=await J("data/KR/index.json");document.querySelectorAll("#seg button").forEach(b=>b.classList.toggle("on",b.textContent==SEG));$("#klist").innerHTML=rowsHTML(pickRows(ix.rows,SEG),"KR")}
+async function krList(){const ix=await J("data/KR/index.json");document.querySelectorAll("#seg button").forEach(b=>b.classList.toggle("on",b.dataset.s==SEG));$("#klist").innerHTML=(SEG=="거래대금"?'<div class="note" style="padding-bottom:6px">거래대금 = 그날 사고판 금액 합계(가격×거래량). 돈이 가장 많이 몰린 순서입니다. 거래량(주식 수)과는 다릅니다.</div>':"")+rowsHTML(pickRows(ix.rows,SEG),"KR")}
 /* macro groups */
 const GROUPS=[["미국 지수·선물",["^GSPC","^IXIC","^DJI","^SOX","^VIX","ES=F","NQ=F"]],["한국·아시아",["^KS11","^KQ11","EWY","^N225","^HSI","000001.SS","^TWII"]],["유럽",["^GDAXI","^FTSE"]],["달러·금리",["KRW=X","DX-Y.NYB","^TNX"]],["원자재",["CL=F","BZ=F","GC=F","SI=F","HG=F","NG=F"]],["암호화폐",["BTC-USD","ETH-USD"]]];
 async function globalMap(){const [a,b]=await Promise.all([J("data/KR/global.json"),J("data/US/global.json")]);const g={};[...a,...b].forEach(x=>{if(!g[x.symbol]||x.date>g[x.symbol].date)g[x.symbol]=x});return g}
@@ -169,9 +170,9 @@ async function viewUS(){
   $("#view").innerHTML=`
   <div class="card"><h3>미국 지수·선물 · ${esc((us[0]||{}).date||"")} 마감</h3>${mrows(us)}</div>
   <div class="card"><h3>S&amp;P500 ${ix.rows.length}종목 신호 분포 · ${esc(ix.asof)}</h3>${distBar(counts(ix.rows))}</div>
-  <div class="seg" id="useg">${["매수후보","관심","매도경고","주의","거래대금"].map(a=>`<button class="${a==SEG?"on":""}" onclick="SEG='${a}';usList()">${a}</button>`).join("")}</div>
+  <div class="seg" id="useg">${["매수후보","관심","매도경고","주의","거래대금"].map(a=>`<button class="${a==SEG?"on":""}" data-s="${a}" onclick="SEG='${a}';usList()">${a=="거래대금"?"거래대금 상위":a}</button>`).join("")}</div>
   <div class="card" id="ulist"></div>${DISC}`;usList()}
-async function usList(){const ix=await J("data/US/index.json");document.querySelectorAll("#useg button").forEach(b=>b.classList.toggle("on",b.textContent==SEG));$("#ulist").innerHTML=rowsHTML(pickRows(ix.rows,SEG),"US")}
+async function usList(){const ix=await J("data/US/index.json");document.querySelectorAll("#useg button").forEach(b=>b.classList.toggle("on",b.dataset.s==SEG));$("#ulist").innerHTML=(SEG=="거래대금"?'<div class="note" style="padding-bottom:6px">거래대금 = 그날 사고판 금액 합계(가격×거래량). 돈이 가장 많이 몰린 순서입니다.</div>':"")+rowsHTML(pickRows(ix.rows,SEG),"US")}
 async function viewMacro(){
   const g=await globalMap();const used=new Set();
   const cards=GROUPS.map(([n,syms])=>{const L=syms.filter(s=>g[s]).map(s=>(used.add(s),g[s]));return L.length?`<div class="card"><h3>${esc(n)}</h3>${mrows(L)}</div>`:""}).join("");
