@@ -185,7 +185,7 @@ function idxRow(gl,nt){const g=k=>(gl||[]).find(x=>x.symbol==k)||{};const ks=g("
   :`<div class="card ixc night"><span class="ixn">🌙 야선 · 나스닥 선물</span><span class="ixs">야간 시세 연결 작업 중입니다. 연결되면 밤 6시~새벽 6시에 여기에 표시됩니다.</span></div>`}
  return h}
 async function viewKR(){
-  const [ix,r,fl,meta,gl,nt,GM]=await Promise.all([J("data/KR/index.json"),J("data/regime.json").catch(()=>({})),J("data/market_flow.json").catch(()=>[]),J("data/meta.json"),J("data/KR/global.json").catch(()=>[]),fetch("data/KR/night.json?t="+Date.now()).then(x=>x.ok?x.json():null).catch(()=>null),J("static/gapmodel.json").catch(()=>null)]);
+  const [ix,r,fl,meta,gl,nt,GM]=await Promise.all([J("data/KR/index.json"),J("data/regime.json").catch(()=>({})),J("data/market_flow.json").catch(()=>[]),J("data/meta.json"),J("data/KR/global.json").catch(()=>[]),fetch("data/KR/night.json?t="+Date.now()).then(x=>x.ok?x.json():null).catch(()=>null),J("data/KR/gapmodel.json").catch(()=>J("static/gapmodel.json")).catch(()=>null)]);
   const col=r.state=="상승장"?"var(--up)":r.state=="조정장"?"#F5A524":"var(--dn)";
   $("#view").innerHTML=`
   <div class="card hero"><h3>오늘의 시장 국면 · ${esc(r.date||ix.asof)} 장마감</h3>
@@ -325,7 +325,7 @@ function flowChart(fl,asof){const L=fl.slice(-30);if(!L.length)return"";const W=
 async function viewStock(a){
   const m=a.m||"KR";const [d,rep,lv]=await Promise.all([J(`data/${m}/${a.code}.json`),J("data/replay.json").catch(()=>null),m=="KR"?J(`data/live/${a.code}.json`).catch(()=>null):Promise.resolve(null)]);
   LIVE=lv;ZN=null;ZO=0;if(!LIVE&&TF!="D"&&TF!="W"&&TF!="M")TF="D";
-  const [UM,UG]=m=="KR"?await Promise.all([J("static/usmap.json").catch(()=>null),J("data/KR/global.json").catch(()=>[])]):[null,[]];
+  const [UM,UG]=m=="KR"?await Promise.all([J("data/KR/usmap.json").catch(()=>J("static/usmap.json")).catch(()=>null),J("data/KR/global.json").catch(()=>[])]):[null,[]];
   d.m=m;CUR=d;const s=d.signal||{};const last=d.bars.slice(-1)[0]||[];const close=s.close??last[4];
   let det=[];try{det=JSON.parse(s.detail||"[]")}catch(e){}
   if(!det.length&&s.reasons)det=String(s.reasons).split(" / ").map(t=>{const mm=t.match(/^([+-]?\d+(?:\.\d+)?)\s*(.*)$/);return mm?["",Number(mm[1]),mm[2]]:null}).filter(Boolean);
