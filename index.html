@@ -50,6 +50,9 @@ header b{font-size:17px;letter-spacing:-.02em;white-space:nowrap}
 .mrow>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mrow .v{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:600}.mrow .c{min-width:70px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
 .warnbox{background:var(--warnBg);border:1px solid var(--warnBd);border-radius:14px;padding:12px 14px;color:var(--warnInk);font-size:13px;display:flex;flex-direction:column;gap:6px;line-height:1.5}
+.grade{flex:none;min-width:104px;border-radius:16px;padding:10px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:var(--upA);color:var(--up);border:2px solid var(--up)}
+.grade b{font-size:20px;letter-spacing:-.02em;line-height:1.1}.grade span{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+.grade.w{background:var(--dnA);color:var(--dn);border-color:var(--dn)}.grade.n{background:var(--soft);color:var(--sub);border-color:var(--line)}
 .chip{display:inline-block;font-size:13px;font-weight:700;border-radius:8px;padding:6px 10px;background:var(--upA);color:var(--up)}
 .chip.w{background:var(--dnA);color:var(--dn)}.chip.n{background:var(--soft);color:var(--sub)}
 .note{font-size:11px;color:var(--mute);line-height:1.55}
@@ -291,8 +294,9 @@ async function viewStock(a){
   const R=rep&&rep.by_h&&rep.by_h.r30?rep.by_h.r30.rows:[];const rb=R.find(x=>x.level=="매수"),rs=R.find(x=>x.level=="매도");
   $("#view").innerHTML=`
   <div style="display:flex;align-items:center;gap:8px"><button class="iconbtn" onclick="go('${m=="US"?"us":"kr"}')" aria-label="목록으로"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button><span class="mu" style="font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d.name)} · ${esc(d.code)}</span></div>
-  <div><div class="big">${won(close,m)}</div><div style="font-size:15px;font-weight:600">${pct(s.change_pct)} <span class="mu" style="font-weight:400;font-size:12px">${esc(s.date||last[0]||"")} 종가</span></div></div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="chip${cls}">${esc(ac)} ${s.score!=null?Math.round(s.score)+"점":""}</span>${s.note?`<span class="chip n">${esc(s.note)}</span>`:""}</div>
+  <div style="display:flex;align-items:center;gap:12px"><div style="min-width:0;flex:1"><div class="big">${won(close,m)}</div><div style="font-size:15px;font-weight:600">${pct(s.change_pct)} <span class="mu" style="font-weight:400;font-size:12px">${esc(s.date||last[0]||"")} 종가</span></div></div>
+   <div class="grade${cls}" role="img" aria-label="레이더 등급 ${esc(ac)} ${s.score!=null?Math.round(s.score)+"점":""}"><b>${esc(ac)}</b><span>${s.score!=null?(s.score>0?"+":"")+Math.round(s.score)+"점":""}</span></div></div>
+  ${s.note?`<div style="display:flex;gap:8px;flex-wrap:wrap"><span class="chip n">${esc(s.note)}</span></div>`:""}
   <div class="card" style="padding:12px 12px 10px;display:flex;flex-direction:column;gap:8px">
    <div class="seg" id="tfseg">${["1","3","5","10","15","30"].map(t=>`<button data-tf="${t}" ${LIVE?"":"disabled"} onclick="TF='${t}';ZN=null;ZO=0;drawChart()">${t}분</button>`).join("")}${[["D","일"],["W","주"],["M","월"]].map(([k,l])=>`<button data-tf="${k}" onclick="TF='${k}';ZN=null;ZO=0;drawChart()">${l}</button>`).join("")}</div>
    <div id="chart"></div>${LIVE?`<div id="judge"></div>`:""}</div>
