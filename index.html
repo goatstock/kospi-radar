@@ -161,8 +161,9 @@ function isNight(){const h=new Date(Date.now()+9*3600e3).getUTCHours();return h>
 function idxRow(gl,nt){const g=k=>(gl||[]).find(x=>x.symbol==k)||{};const ks=g("^KS11"),kq=g("^KQ11");
  let h=`<div class="ixrow">${idxCard("코스피",ks.close,ks.change_pct,(ks.date||"")+" 종가")}${idxCard("코스닥",kq.close,kq.change_pct,(kq.date||"")+" 종가")}</div>`;
  if(isNight()){const fresh=nt&&nt.time&&(Date.now()-Date.parse(nt.time))<3*3600e3;
-  const one=(lab,v,c)=>`<div class="ngt"><span class="ixn">${lab}</span><b class="ixv">${v==null?"-":Number(v).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</b><span class="ixp ${c>0?"up":c<0?"dn":""}">${c==null?"":(c>0?"▲ +":c<0?"▼ ":"")+Number(c).toFixed(2)+"%"}</span></div>`;
-  h+=fresh?`<div class="card ixc night"><div class="ngrid">${one("🌙 야선 (코스피200)",nt.price,nt.change_pct)}${nt.nq?one("나스닥 선물",nt.nq.price,nt.nq.change_pct):""}</div><span class="ixs">${esc(String(nt.time).slice(11,16))} 기준 · 다음 날 시초가 참고용</span></div>`
+  const t=fresh?esc(String(nt.time).slice(11,16))+" 기준":"";
+  const one=(lab,v,c)=>`<div class="card ixc night"><span class="ixn">${lab}</span><b class="ixv">${v==null?"-":Number(v).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</b><span class="ixp ${c>0?"up":c<0?"dn":""}">${c==null?"":(c>0?"▲ +":c<0?"▼ ":"")+Number(c).toFixed(2)+"%"}</span><span class="ixs">${t}</span></div>`;
+  h+=fresh?`<div class="ixrow">${one("🌙 야선",nt.price,nt.change_pct)}${nt.nq?one("나스닥 선물",nt.nq.price,nt.nq.change_pct):""}</div>`
   :`<div class="card ixc night"><span class="ixn">🌙 야선 · 나스닥 선물</span><span class="ixs">야간 시세 연결 작업 중입니다. 연결되면 밤 6시~새벽 6시에 여기에 표시됩니다.</span></div>`}
  return h}
 async function viewKR(){
