@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#F2F4F6">
 <meta name="description" content="GOAT STOCK — 코스피·미국 주식 점수화 레이더 3일 무료 체험 (참고용, 수익 보장 없음)">
 <link rel="manifest" href="manifest.json">
-<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="icon" href="logo.png" type="image/png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="GOAT STOCK">
@@ -71,7 +71,7 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(-
 </style>
 </head>
 <body>
-<header><img src="logo.svg" alt="" width="30" height="30" style="border-radius:8px;flex:none"><b style="letter-spacing:.02em">GOAT <span style="color:var(--acc)">STOCK</span></b><span class="badge" id="badge">…</span>
+<header><img src="logo.png" alt="" width="30" height="30" style="border-radius:8px;flex:none"><b style="letter-spacing:.02em">GOAT <span style="color:var(--acc)">STOCK</span></b><span class="badge" id="badge">…</span>
 <button class="pill" id="installBtn" hidden onclick="installApp()">앱 설치</button>
 <button class="iconbtn" onclick="go('find')" aria-label="종목 검색"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></button>
 <button class="iconbtn" id="themeBtn" onclick="toggleTheme()" aria-label="화면 밝기 바꾸기"></button></header>
@@ -114,7 +114,7 @@ function gate(){const now=Date.now(),st=tGet();
   if(now>=end)return ended("3일 체험 기간이 끝났습니다.");
   $("#badge").textContent="체험 "+leftText(end-now)+" 남음";$("#nav").style.display="";return true}
 function shell(h){$("#nav").style.display="none";$("#view").innerHTML=h}
-function agree(){shell(`<div class="card" style="display:flex;flex-direction:column;gap:12px"><img src="logo.svg" alt="GOAT STOCK 로고" width="64" height="64" style="border-radius:16px"><b style="font-size:22px;letter-spacing:-.01em;line-height:1.3">GOAT STOCK<br>3일 무료 체험</b><span class="mu" style="font-size:13px;margin-top:-6px">코스피 · 미장 레이더</span>
+function agree(){shell(`<div class="card" style="display:flex;flex-direction:column;gap:12px"><img src="logo.png" alt="GOAT STOCK 로고" width="64" height="64" style="border-radius:16px"><b style="font-size:22px;letter-spacing:-.01em;line-height:1.3">GOAT STOCK<br>3일 무료 체험</b><span class="mu" style="font-size:13px;margin-top:-6px">코스피 · 미장 레이더</span>
   <div style="font-size:14px;color:var(--sub);line-height:1.6">국내 950종목과 미국 S&amp;P500 533종목의 시세·수급·뉴스를 점수로 매긴 결과를 봅니다. 전 종목 차트(일·주·월), 투자자별 수급, 점수 근거, 세계 지표, 속보가 들어 있습니다. 시작을 누른 때부터 <b>72시간</b> 쓸 수 있습니다.</div>
   <div class="warnbox"><b>시작 전에 확인해 주세요</b><span>· 모든 정보는 참고용이며 수익을 보장하지 않습니다.<br>· 투자 판단과 손익은 본인 책임입니다.<br>· 개별 종목 상담이나 매매 대행은 하지 않습니다.<br>· 최근 검증에서 장중 '매수' 판정은 비용을 빼면 평균 손실이었습니다.</span></div>
   <button id="startBtn" class="pill" style="height:54px;border-radius:14px;font-size:16px">동의하고 3일 체험 시작</button>
