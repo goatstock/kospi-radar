@@ -227,6 +227,10 @@ let MKF="전체",KQSET=null;
 async function kqSet(){if(KQSET)return KQSET;try{KQSET=new Set((await J("data/KR/kq.json")).KOSDAQ||[])}catch(e){KQSET=new Set()}return KQSET}
 const isKQ=r=>r[9]?r[9]=="KOSDAQ":(KQSET&&KQSET.has(r[0]));
 const mkFilter=rows=>MKF=="전체"?rows:rows.filter(r=>MKF=="코스닥"?isKQ(r):!isKQ(r));
+/* 미장 묶음 필터: 전체(S&P500) / 나스닥100 / 다우30 / 반도체 (data/US/groups.json, 구성은 최근 기준 근사) */
+let UMF="전체",UGRP=null;
+async function uGrp(){if(UGRP)return UGRP;try{UGRP=await J("data/US/groups.json")}catch(e){UGRP={}}return UGRP}
+const uFilter=rows=>UMF=="전체"||!UGRP||!UGRP[UMF]?rows:rows.filter(r=>UGRP[UMF].includes(r[0]));
 function pickRows(rows,seg){let L;
   if(seg=="거래대금")L=rows.slice().sort((a,b)=>(b[8]||0)-(a[8]||0));
   else{L=rows.filter(r=>r[3]==seg);L.sort((a,b)=>seg=="매도경고"||seg=="주의"?a[2]-b[2]:b[2]-a[2])}
@@ -262,9 +266,9 @@ async function nightTick(){if(!isNight()||document.hidden)return;try{NIGHT=await
 setInterval(nightTick,30000);window.addEventListener("load",()=>setTimeout(nightTick,200));
 /* 전체 지수판: 코스피·코스닥 + 미국 4대 지수 (국내·미장 화면 공통, 각 장중 실시간) */
 const BOARD=[["^KS11","코스피","KOSPI"],["^KQ11","코스닥","KOSDAQ"],["^GSPC","S&P500",""],["^IXIC","나스닥",""],["^DJI","다우",""],["^SOX","반도체(SOX)",""]];
-function goMkt(v,f){SEG="매수후보";if(v=="kr")MKF=f||"전체";const jump=()=>{const t=document.getElementById(v=="kr"?"seg":"useg");if(t)t.scrollIntoView({behavior:"smooth",block:"start"})};if(VIEW==v){if(v=="kr")krList();else usList();jump()}else{go(v);setTimeout(jump,900)}}
-function idxBoard(g){return `<div class="ixhint">👆 지수를 누르면 그 시장의 <b>추천 종목(매수후보)</b>으로 바로 갑니다 · 코스피 → 코스피 종목, 코스닥 → 코스닥 종목, 🇺🇸 → 미장 종목</div><div class="ixb">${BOARD.map(([s,n,k])=>{const x=g(s)||{},c=x.change_pct,cl=c>0?"up":c<0?"dn":"";
- return `<div class="card ixc ixgo" role="button" tabindex="0" onclick="goMkt('${k?"kr":"us"}','${k=="KOSDAQ"?"코스닥":k=="KOSPI"?"코스피":""}')"${k?` data-rti="${k}"`:` data-rtui="${s}"`}><span class="ixn">${k?"🇰🇷 ":"🇺🇸 "}${esc(n)}</span><b class="ixv">${x.close==null?"-":Number(x.close).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</b><span class="ixp ${cl}">${c==null?"":(c>0?"▲ +":c<0?"▼ ":"")+Number(c).toFixed(2)+"%"}</span><span class="ixs">${k?(mktOpen()?"":"종가"):(usOpen()?"":"최근 종가")}</span></div>`}).join("")}</div>`}
+function goMkt(v,f){SEG="매수후보";if(v=="kr")MKF=f||"전체";else UMF=f||"전체";const jump=()=>{const t=document.getElementById(v=="kr"?"seg":"useg");if(t)t.scrollIntoView({behavior:"smooth",block:"start"})};if(VIEW==v){if(v=="kr")krList();else usList();jump()}else{go(v);setTimeout(jump,900)}}
+function idxBoard(g){return `<div class="ixhint">👆 지수를 누르면 그 시장의 <b>추천 종목(매수후보)</b>으로 바로 갑니다 · 코스피·코스닥 → 각 시장 종목, S&amp;P500 → 미장 전체, 나스닥 → 나스닥100, 다우 → 다우30, 반도체 → 반도체주</div><div class="ixb">${BOARD.map(([s,n,k])=>{const x=g(s)||{},c=x.change_pct,cl=c>0?"up":c<0?"dn":"";
+ return `<div class="card ixc ixgo" role="button" tabindex="0" onclick="goMkt('${k?"kr":"us"}','${k=="KOSDAQ"?"코스닥":k=="KOSPI"?"코스피":s=="^IXIC"?"나스닥100":s=="^DJI"?"다우30":s=="^SOX"?"반도체":"전체"}')"${k?` data-rti="${k}"`:` data-rtui="${s}"`}><span class="ixn">${k?"🇰🇷 ":"🇺🇸 "}${esc(n)}</span><b class="ixv">${x.close==null?"-":Number(x.close).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</b><span class="ixp ${cl}">${c==null?"":(c>0?"▲ +":c<0?"▼ ":"")+Number(c).toFixed(2)+"%"}</span><span class="ixs">${k?(mktOpen()?"":"종가"):(usOpen()?"":"최근 종가")}</span></div>`}).join("")}</div>`}
 function idxRow(gl,nt){const g=k=>(gl||[]).find(x=>x.symbol==k)||{};const ks=g("^KS11"),kq=g("^KQ11");
  let h=idxBoard(g);
  if(isNight())h+=`<div class="ixrow" id="nightrow">${nightCards(NIGHT)}</div>`;
@@ -335,9 +339,11 @@ async function viewUS(){
   ${isNight()?`<div class="ixrow" id="nightrow">${nightCards(NIGHT)}</div>`:""}
   <div class="card"><h3>미국 지수·선물·자산 · ${esc((us[0]||{}).date||"")} 마감</h3>${mrows(us)}</div>
   <div class="card"><h3>S&amp;P500 ${ix.rows.length}종목 신호 분포 · ${esc(ix.asof)}</h3>${distBar(counts(ix.rows))}</div>
+  <div class="mkf" id="umf"></div>
   <div class="seg" id="useg">${["매수후보","관심","매도경고","주의","거래대금"].map(a=>`<button class="${a==SEG?"on":""}" data-s="${a}" onclick="SEG='${a}';usList()">${a=="거래대금"?"거래대금 상위":a}</button>`).join("")}</div>
   <div class="card" id="ulist"></div>${DISC}`;if(SEG=="외국인"||SEG=="기관")SEG="매수후보";usList()}
-async function usList(){const ix=await J("data/US/index.json");document.querySelectorAll("#useg button").forEach(b=>b.classList.toggle("on",b.dataset.s==SEG));$("#ulist").innerHTML=scoreNote(SEG)+rowsHTML(pickRows(ix.rows,SEG),"US")+holdMore(ix.rows,SEG,"US");setTimeout(()=>usTick(true),100)}
+async function usList(){const ix0=await J("data/US/index.json");await uGrp();const ix={...ix0,rows:uFilter(ix0.rows)};
+ const mf=document.getElementById("umf");if(mf)mf.innerHTML=["전체","나스닥100","다우30","반도체"].map(a=>`<button class="${a==UMF?"on":""}" onclick="UMF='${a}';usList()">${a=="전체"?"S&amp;P500 전체":a} <small>${a=="전체"?ix0.rows.length:ix0.rows.filter(r=>(UGRP[a]||[]).includes(r[0])).length}</small></button>`).join("");document.querySelectorAll("#useg button").forEach(b=>b.classList.toggle("on",b.dataset.s==SEG));$("#ulist").innerHTML=scoreNote(SEG)+rowsHTML(pickRows(ix.rows,SEG),"US")+holdMore(ix.rows,SEG,"US");setTimeout(()=>usTick(true),100)}
 /* 환율 상세 (중계서버 /fx, 야후 기준 · 1분 보관) */
 const FXL=[["USDKRW=X","🇺🇸","미국 달러","1달러","원/달러가 오르면(원화 약세) 반도체·자동차·조선 같은 수출주 이익엔 유리하지만, 외국인은 환차손을 피하려 한국 주식을 파는 경향이 있습니다. 내리면(원화 강세) 외국인 매수가 들어오기 쉽고 항공·여행·내수주에 우호적입니다."],
  ["JPYKRW=X","🇯🇵","일본 엔","100엔","원/엔이 내리면(엔화 약세) 일본과 경쟁하는 자동차·기계·철강·조선의 가격 경쟁력이 떨어집니다. 엔화가 강해지면 우리 수출주가 반사이익을 봅니다. 엔화 급등은 '엔 캐리 청산' 신호로 세계 증시가 흔들릴 때가 많습니다."],
