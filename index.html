@@ -220,8 +220,11 @@ async function flowList(rows,seg){let F;try{F=await J("data/KR/flowtop.json")}ca
   return `<button class="row" onclick="go('stock',{code:'${esc(r[0])}',m:'KR'})"><span class="sc${w}">${r[2]>0?"+":""}${Math.round(r[2])}</span><span class="nm"><b>${esc(r[1])}</b><span><b class="up" style="font-size:12.5px">${eok(x[1])}</b> (5일 ${eok(x[2])}) · ${esc(r[3])}</span></span><span class="px${mktOpen()?" stale":""}" data-rt="${esc(r[0])}"><b>${won(r[4],"KR")}</b>${pct(r[5])}</span></button>`}).join("")+'</div>'}
 /* 매수후보가 적을 때: 점수는 높지만 시장 조건·거래대금 때문에 보류된 상위 종목을 이어서 보여 줌 */
 function holdMore(rows,seg,m){if(seg!="매수후보")return"";const n=rows.filter(r=>r[3]=="매수후보").length;if(n>=8)return"";
- const L=rows.filter(r=>r[3]=="관심").sort((a,b)=>b[2]-a[2]).slice(0,10);if(!L.length)return"";const held=L.filter(r=>r[2]>=30).length;
- return `<div class="snote" style="margin-top:12px"><b>다음 후보 ${L.length}종목 (관심 상위)</b><span>${held?`이 중 ${held}종목은 점수가 매수후보 기준(+30) 이상이지만 지금 시장 국면 조건(지수보다 강함·20일선 위) 때문에 보류됐습니다. `:""}매수후보 기준에 가장 가까운 종목들이라, 장이 돌아서거나 점수가 오르면 먼저 매수후보로 올라옵니다.${m=="US"?" 미장은 외국인·기관 수급 점수가 없어 점수가 국내보다 낮게 나오는 편입니다.":""}</span></div>`+rowsHTML(L,m)}
+ const grp=(m=="US"&&UMF!="전체")||(m=="KR"&&MKF=="코스닥");
+ let L=rows.filter(r=>r[3]=="관심").sort((a,b)=>b[2]-a[2]).slice(0,10);
+ if(grp&&L.length<10)L=rows.filter(r=>r[3]!="매수후보").sort((a,b)=>b[2]-a[2]).slice(0,10);
+ if(!L.length)return"";const held=L.filter(r=>r[2]>=30).length;
+ return `<div class="snote" style="margin-top:12px"><b>${grp?`${m=="US"?UMF:"코스닥"} 점수 상위 ${L.length}종목`:`다음 후보 ${L.length}종목 (관심 상위)`}</b><span>${held?`이 중 ${held}종목은 점수가 매수후보 기준(+30) 이상이지만 지금 시장 국면 조건(지수보다 강함·20일선 위) 때문에 보류됐습니다. `:""}매수후보 기준에 가장 가까운 종목들이라, 장이 돌아서거나 점수가 오르면 먼저 매수후보로 올라옵니다.${m=="US"?" 미장은 외국인·기관 수급 점수가 없어 점수가 국내보다 낮게 나오는 편입니다.":""}</span></div>`+rowsHTML(L,m)}
 /* 국내 시장 구분 필터: 전체 / 코스피 / 코스닥 (index 10번째 칸 또는 kq.json) */
 let MKF="전체",KQSET=null;
 async function kqSet(){if(KQSET)return KQSET;try{KQSET=new Set((await J("data/KR/kq.json")).KOSDAQ||[])}catch(e){KQSET=new Set()}return KQSET}
