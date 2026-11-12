@@ -262,13 +262,27 @@ function pickRows(rows,seg){let L;
   else{L=rows.filter(r=>r[3]==seg);L.sort((a,b)=>seg=="매도경고"||seg=="주의"?a[2]-b[2]:b[2]-a[2])}
   return L.slice(0,50)}
 const USTAB={"basis": "2025-06-23~2026-11-11 339거래일", "rows": [["-2% 이하", 43, 30.2, -2.2], ["-2~-1%", 31, 41.9, -1.5], ["-1~-0.3%", 36, 63.9, 0.4], ["보합(±0.3%)", 54, 72.2, 0.5], ["+0.3~1%", 77, 58.4, 0.2], ["+1~2%", 60, 75.0, 0.9], ["+2% 이상", 38, 81.6, 2.7]], "bins": [-2, -1, -0.3, 0.3, 1, 2]};
-function usCard(gl,gm){const g=k=>(gl||[]).find(x=>x.symbol==k)||{};const L=[["^GSPC","S&P500"],["^IXIC","나스닥"],["^SOX","반도체"],["EWY","한국ETF"],["^VIX","VIX"]];
+/* 미장 카드 날짜: 실시간 시세(/uq)로 다시 그림. 진행 중이면 '진행 중', 끝났으면 그날 미국 날짜 + 반영될 코스피 날짜 */
+const kstD=(d=new Date())=>new Date(d.getTime()+9*3600e3).toISOString().slice(0,10);
+const krTD=d=>{const w=new Date(d+"T00:00:00Z").getUTCDay();return w>0&&w<6&&!KR_HOL.includes(d)};
+const nextKR=d=>{let t=new Date(d+"T00:00:00Z");do{t=new Date(t.getTime()+864e5)}while(!krTD(t.toISOString().slice(0,10)));return t.toISOString().slice(0,10)};
+const md=d=>{const t=new Date(d+"T00:00:00Z");return `${t.getUTCMonth()+1}/${t.getUTCDate()}(${"일월화수목금토"[t.getUTCDay()]})`};
+function usHead(meta){if(!meta)return null;const now=new Date(),td=kstD(now),hm=(now.getUTCHours()+9)%24*60+now.getUTCMinutes();
+ const tgt=krTD(td)&&hm<930?td:nextKR(td),tl=tgt==td?`오늘 ${md(tgt)}`:`다음 장 ${md(tgt)}`;
+ return meta.live?`🇺🇸 미장 진행 중(${md(meta.ny)} 장) → ${tl} 코스피 <span class="mu" style="font-size:12px;font-weight:500"><span class="rtdot"></span>실시간 ${esc(meta.t)} · 마감 전이라 잠정</span>`
+  :`🇺🇸 ${md(meta.ny)} 미장 마감 → ${tl} 코스피 <span class="mu" style="font-size:12px;font-weight:500">미국 마감 기준</span>`}
+async function usCardLive(){const el=document.getElementById("uscard");if(!el)return;const S=["^GSPC","^IXIC","^SOX","EWY","^VIX"];
+ try{const j=await fetch(RT+"/uq?s="+S.map(encodeURIComponent).join(",")).then(r=>r.json());const gl=S.filter(k=>j.p[k]&&j.p[k][1]!=null).map(k=>({symbol:k,change_pct:j.p[k][1]}));
+  const tm=Math.max(...S.map(k=>(j.p[k]||[])[2]||0));if(!tm||gl.length<4)return;
+  const ny=new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York"}).format(new Date(tm*1000));
+  const h=usCard(gl,GM,{live:usOpen(),ny,t:j.t});if(h&&document.getElementById("uscard"))document.getElementById("uscard").outerHTML=h}catch(e){}}
+function usCard(gl,gm,meta){const g=k=>(gl||[]).find(x=>x.symbol==k)||{};const L=[["^GSPC","S&P500"],["^IXIC","나스닥"],["^SOX","반도체"],["EWY","한국ETF"],["^VIX","VIX"]];
  const nq=g("^IXIC"),sx=g("^SOX");if(nq.change_pct==null||sx.change_pct==null)return"";
  const v=(nq.change_pct+sx.change_pct)/2;let i=USTAB.bins.findIndex(b=>v<=b);if(i<0)i=USTAB.bins.length;const r=USTAB.rows[i];
  const cl=c=>c>0?"up":c<0?"dn":"";
  let gp="";if(gm){let p=gm.icpt,ok=true;for(const k in gm.coef){const q=g(k).change_pct;if(q==null){ok=false;break}p+=gm.coef[k]*q}
-  if(ok)gp=`<div class="gapp"><span>오늘 시초가 예상<small>전 종목 중간값 기준</small></span><b class="${cl(p)}">${p>0?"+":""}${p.toFixed(2)}%</b><em>학습에 안 쓴 ${gm.test.n}일 시험에서 방향 적중 ${gm.test.dir}% · 갭 ±0.5% 이상 예상한 날은 ${gm.test.dir_big}% (${gm.test.n_big}일) · 오차 평균 ±${gm.test.mae}%p</em></div>`}
- return `<div class="card"><h3>🇺🇸 어젯밤 미장 → 오늘 코스피 <span class="mu" style="font-size:12px;font-weight:500">${esc(nq.date||"")} 미국 마감</span></h3>
+  if(ok)gp=`<div class="gapp"><span>${meta&&meta.live?"시초가 예상(잠정)":"시초가 예상"}<small>전 종목 중간값 기준</small></span><b class="${cl(p)}">${p>0?"+":""}${p.toFixed(2)}%</b><em>학습에 안 쓴 ${gm.test.n}일 시험에서 방향 적중 ${gm.test.dir}% · 갭 ±0.5% 이상 예상한 날은 ${gm.test.dir_big}% (${gm.test.n_big}일) · 오차 평균 ±${gm.test.mae}%p</em></div>`}
+ return `<div class="card" id="uscard"><h3>${usHead(meta)||`🇺🇸 미장 → 코스피 <span class="mu" style="font-size:12px;font-weight:500">${esc(nq.date||"")} 미국 마감 · 실시간 불러오는 중</span>`}</h3>
  <div class="usg">${L.map(([k,n])=>{const x=g(k);return x.change_pct==null?"":`<div class="usc"><span>${n}</span><b class="${cl(x.change_pct)}">${x.change_pct>0?"+":""}${x.change_pct.toFixed(2)}%</b></div>`}).join("")}</div>
  ${gp}<div class="usv"><b>나스닥·반도체 평균 ${v>0?"+":""}${v.toFixed(2)}% → 이런 날 다음 날 코스피 상승 ${r[2].toFixed(0)}%</b><span>지난 ${esc(USTAB.basis)} 중 같은 구간(${esc(r[0])}) ${r[1]}일, 코스피 평균 ${r[3]>0?"+":""}${r[3].toFixed(1)}%. 평소 상승 비율은 61.6%입니다. 미장은 주로 시초가에 반영되고, 장중 흐름(시가→종가)과는 거의 관계가 없었습니다.</span></div></div>`}
 function usLink(code,um,gl){if(!um||!um.map||!um.map[code])return"";const [sym,lab,r,b,pu,nu,pd,nd]=um.map[code];const x=(gl||[]).find(q=>q.symbol==sym)||{};
@@ -328,7 +342,7 @@ async function viewKR(){
   <div class="mkf" id="mkf"></div>
   <div class="seg" id="seg">${["매수후보","관심","매도경고","주의","거래대금","외국인","기관"].map(a=>`<button class="${a==SEG?"on":""}" data-s="${a}" onclick="SEG='${a}';krList()">${a=="거래대금"?"거래대금 상위":a=="외국인"?"외인 매수 상위":a=="기관"?"기관 매수 상위":a}</button>`).join("")}</div>
   <div class="card" id="klist"></div><div class="card share"><div><b>지인에게 3일 무료 체험 보내기</b><span>링크만 보내면 받은 분 휴대폰에서 바로 열립니다. 설치·가입 없음.</span></div><button class="pill" onclick="shareApp()">공유하기</button></div>${DISC}`;
-  krList()}
+  krList();usCardLive();clearInterval(window.__usT);window.__usT=setInterval(()=>{if(VIEW=="kr")usCardLive()},60000)}
 /* 탭별 점수 기준 한 줄 설명 */
 const SNOTE={"매수후보":["+30점 이상","20일 평균 거래대금 10억 이상, 시장 상태 조건 통과(하락장·급락장에선 지수보다 강하고 20일선 위인 종목만)"],
  "관심":["+15 ~ +29점","또는 30점 이상이지만 거래대금이 적거나 시장 상태 조건을 못 넘은 종목"],
