@@ -60,6 +60,7 @@ header b{font-size:17px;letter-spacing:-.02em;white-space:nowrap}
 .hero .bar{background:rgba(255,255,255,.25)}.hero .bar i{background:#fff}.hero div[style*="color:var(--sub)"],.hero div[style*="color:var(--mute)"]{color:rgba(255,255,255,.82)!important}
 .cell.tgt{background:var(--accBg)}.cell.tgt span{color:var(--accD)}.cell.tgt b{color:var(--accD)!important}.cell.stp{background:var(--upA)}.cell.stp span,.cell.stp b{color:var(--risk)!important}
 .sc.b{background:linear-gradient(125deg,#E53950,#FF6B5E);color:#fff}.grade.b{background:linear-gradient(140deg,#E53950,#FF6B5E);box-shadow:0 8px 20px rgba(229,57,80,.28)}body[data-mt=dark] .sc.b,body[data-mt=dark] .grade.b{background:linear-gradient(125deg,#FF4D66,#FF7A6B)}
+.ixb{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.ixb .ixc{padding:11px 10px;border-radius:14px;gap:1px}.ixb .ixn{font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ixb .ixv{font-size:16px;letter-spacing:-.4px}.ixb .ixp{font-size:12px}.ixb .ixs{font-size:10.5px}
 .ixrow{display:grid;grid-template-columns:1fr 1fr;gap:12px}.ixc{display:flex;flex-direction:column;gap:2px;padding:16px}.ixn{font-size:13px;font-weight:600;color:var(--sub)}.ixv{font-family:Inter,"Pretendard Variable",sans-serif;font-size:24px;font-weight:800;letter-spacing:-.8px;font-variant-numeric:tabular-nums;color:var(--ink)}.ixp{font-family:Inter,sans-serif;font-size:14px;font-weight:700}.ixs{font-size:12px;color:var(--mute)}.ngrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:6px}.ngt{display:flex;flex-direction:column;gap:2px;min-width:0}.ixc.night{background:linear-gradient(125deg,#1E1B4B,#3B2A7A);border:0;color:#fff}.ixc.night .ixn,.ixc.night .ixs{color:rgba(255,255,255,.8)}.ixc.night .ixv{color:#fff}.ixc.night .up{color:#FF8A9A}.ixc.night .dn{color:#8DB8FF}
 .vbad{margin-top:8px;background:#FFF4E5;border:1px solid #F5C58A;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;font-size:12.5px;line-height:1.5;color:#7A4A12}.vbad b{font-size:13.5px;color:#B45309}body[data-mt=dark] .vbad{background:rgba(242,140,40,.12);border-color:rgba(242,140,40,.4);color:#FFD7A8}body[data-mt=dark] .vbad b{color:#FFAA55}
 .usg{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}.usc{background:var(--soft);border-radius:12px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}.usc span{font-size:10.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.usc b{font-family:Inter,sans-serif;font-size:14px;font-weight:800}.usv{margin-top:10px;background:var(--accBg);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}.usv b{font-size:14px;color:var(--accD)}.usv span{font-size:12px;color:var(--sub);line-height:1.5}
@@ -248,8 +249,12 @@ function nightCards(N){const f2=v=>v==null?"-":Number(v).toLocaleString("en-US",
 async function nightTick(){if(!isNight()||document.hidden)return;try{NIGHT=await fetch(RT+"/night").then(r=>r.json());try{localStorage.setItem("goat_night",JSON.stringify(NIGHT))}catch(e){}}catch(e){return}
  const el=document.getElementById("nightrow");if(el)el.innerHTML=nightCards(NIGHT)}
 setInterval(nightTick,30000);window.addEventListener("load",()=>setTimeout(nightTick,200));
+/* 전체 지수판: 코스피·코스닥 + 미국 4대 지수 (국내·미장 화면 공통, 각 장중 실시간) */
+const BOARD=[["^KS11","코스피","KOSPI"],["^KQ11","코스닥","KOSDAQ"],["^GSPC","S&P500",""],["^IXIC","나스닥",""],["^DJI","다우",""],["^SOX","반도체(SOX)",""]];
+function idxBoard(g){return `<div class="ixb">${BOARD.map(([s,n,k])=>{const x=g(s)||{},c=x.change_pct,cl=c>0?"up":c<0?"dn":"";
+ return `<div class="card ixc"${k?` data-rti="${k}"`:` data-rtui="${s}"`}><span class="ixn">${k?"🇰🇷 ":"🇺🇸 "}${esc(n)}</span><b class="ixv">${x.close==null?"-":Number(x.close).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</b><span class="ixp ${cl}">${c==null?"":(c>0?"▲ +":c<0?"▼ ":"")+Number(c).toFixed(2)+"%"}</span><span class="ixs">${k?(mktOpen()?"":"종가"):(usOpen()?"":"최근 종가")}</span></div>`}).join("")}</div>`}
 function idxRow(gl,nt){const g=k=>(gl||[]).find(x=>x.symbol==k)||{};const ks=g("^KS11"),kq=g("^KQ11");
- let h=`<div class="ixrow">${idxCard("코스피",ks.close,ks.change_pct,(ks.date||"")+(/장중/.test(ks.date||"")?"":" 종가"))}${idxCard("코스닥",kq.close,kq.change_pct,(kq.date||"")+(/장중/.test(kq.date||"")?"":" 종가"))}</div>`;
+ let h=idxBoard(g);
  if(isNight())h+=`<div class="ixrow" id="nightrow">${nightCards(NIGHT)}</div>`;
  return h}
 async function shareApp(){const url=location.origin+location.pathname;const d={title:"GOAT STOCK 3일 무료 체험",text:"코스피·미장 레이더 — 어젯밤 미장으로 본 오늘 시초가 예상, 종목별 매도경고까지. 3일 무료로 써 보세요.",url};
@@ -312,8 +317,8 @@ async function viewUS(){
    <div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span class="mu">권장 현금 비중</span><b class="hcash">${R[0]}%</b></div><div class="bar"><i style="width:${R[0]}%"></i></div></div></div>
    <div style="font-size:13px;color:var(--sub);line-height:1.55;margin-top:10px">${esc(R[1])}</div>
    <div style="font-size:12px;color:var(--mute);line-height:1.6;margin-top:6px">${rs.map(esc).join("<br>")}</div></div>`:""}
-  <div class="ixrow">${ic("^GSPC","S&amp;P500")}${ic("^IXIC","나스닥")}</div>
-  <div class="ixrow">${ic("^DJI","다우")}${ic("^SOX","필라델피아 반도체")}</div>
+  ${idxBoard(k=>{const v=gv(k,0);return v==null?(g[k]||{}):{close:v,change_pct:gv(k,1)}})}
+  ${isNight()?`<div class="ixrow" id="nightrow">${nightCards(NIGHT)}</div>`:""}
   <div class="card"><h3>미국 지수·선물·자산 · ${esc((us[0]||{}).date||"")} 마감</h3>${mrows(us)}</div>
   <div class="card"><h3>S&amp;P500 ${ix.rows.length}종목 신호 분포 · ${esc(ix.asof)}</h3>${distBar(counts(ix.rows))}</div>
   <div class="seg" id="useg">${["매수후보","관심","매도경고","주의","거래대금"].map(a=>`<button class="${a==SEG?"on":""}" data-s="${a}" onclick="SEG='${a}';usList()">${a=="거래대금"?"거래대금 상위":a}</button>`).join("")}</div>
