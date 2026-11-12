@@ -123,9 +123,19 @@ export default {
       try { const j = await (await fetch("https://polling.finance.naver.com/api/realtime/domestic/index/FUT", { headers: H })).json(); o.poll = JSON.stringify(j).slice(0, 700); } catch (e) { o.perr = e.message; }
       for (const s of ["NQ=F", "ES=F", "EWY"]) {
         try { const j = await (await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(s)}?range=1d&interval=5m`, { headers: { "User-Agent": "Mozilla/5.0" } })).json(); const m = j.chart.result[0].meta;
-          o[s] = [m.regularMarketPrice, m.chartPreviousClose ? (m.regularMarketPrice / m.chartPreviousClose - 1) * 100 : null, m.regularMarketTime]; } catch (e) {}
+          const r0 = j.chart.result[0], ts = r0.timestamp || [], cq = r0.indicators.quote[0].close || []; let cut = Math.floor(Date.parse(new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10) + "T06:35:00Z") / 1000); if (cut * 1000 > Date.now()) cut -= 86400; let p35 = null; for (let i = 0; i < ts.length; i++) { if (ts[i] <= cut && cq[i] != null) p35 = cq[i]; } o[s] = [m.regularMarketPrice, m.chartPreviousClose ? (m.regularMarketPrice / m.chartPreviousClose - 1) * 100 : null, m.regularMarketTime, p35]; } catch (e) {}
       }
       return { t: kst(), ...o };
+    });
+    if (u.pathname === "/uq") return cached(req, ctx, async () => {
+      const ss = (u.searchParams.get("s") || "").split(",").filter(x => /^[\^A-Z0-9.=-]{1,12}$/.test(x)).slice(0, 60), p = {};
+      await Promise.all(ss.map(async s => { try { const m = (await (await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(s)}?range=1d&interval=5m`, { headers: { "User-Agent": "Mozilla/5.0" } })).json()).chart.result[0].meta;
+        p[s] = [m.regularMarketPrice, m.chartPreviousClose ? (m.regularMarketPrice / m.chartPreviousClose - 1) * 100 : null, m.regularMarketTime]; } catch (e) {} }));
+      return { t: kst(), p };
+    });
+    if (u.pathname === "/uh") return cached(req, ctx, async () => {
+      const j = await (await fetch("https://query1.finance.yahoo.com/v8/finance/chart/%5EGSPC?range=6mo&interval=1d", { headers: { "User-Agent": "Mozilla/5.0" } })).json();
+      const r = j.chart.result[0]; return { t: kst(), c: (r.indicators.quote[0].close || []).filter(x => x != null).map(x => +x.toFixed(2)) };
     });
     if (u.pathname === "/trtest") return cors(await llm(env, ["Nvidia slides as Fed holds rates", "Oil jumps on supply fears"]));
     if (u.pathname === "/news") {
