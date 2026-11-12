@@ -271,9 +271,9 @@ function usHead(meta){if(!meta)return null;const now=new Date(),td=kstD(now),hm=
  const tgt=krTD(td)&&hm<930?td:nextKR(td),tl=tgt==td?`오늘 ${md(tgt)}`:`다음 장 ${md(tgt)}`;
  return meta.live?`🇺🇸 미장 진행 중(${md(meta.ny)} 장) → ${tl} 코스피 <span class="mu" style="font-size:12px;font-weight:500"><span class="rtdot"></span>실시간 ${esc(meta.t)} · 마감 전이라 잠정</span>`
   :`🇺🇸 ${md(meta.ny)} 미장 마감 → ${tl} 코스피 <span class="mu" style="font-size:12px;font-weight:500">미국 마감 기준</span>`}
-async function usCardLive(){const el=document.getElementById("uscard");if(!el)return;const S=["^GSPC","^IXIC","^SOX","EWY","^VIX"];
+async function usCardLive(){const el=document.getElementById("uscard");if(!el)return;const S=["^GSPC","^IXIC","^SOX","EWY","^VIX","KRW=X"];
  try{const j=await fetch(RT+"/uq?s="+S.map(encodeURIComponent).join(",")).then(r=>r.json());const gl=S.filter(k=>j.p[k]&&j.p[k][1]!=null).map(k=>({symbol:k,change_pct:j.p[k][1]}));
-  const tm=Math.max(...S.map(k=>(j.p[k]||[])[2]||0));if(!tm||gl.length<4)return;
+  const tm=Math.max(...S.slice(0,5).map(k=>(j.p[k]||[])[2]||0));if(!tm||gl.length<4)return;
   const ny=new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York"}).format(new Date(tm*1000));
   const h=usCard(gl,window.__GM,{live:usOpen(),ny,t:j.t});if(h&&document.getElementById("uscard"))document.getElementById("uscard").outerHTML=h}catch(e){}}
 function usCard(gl,gm,meta){const g=k=>(gl||[]).find(x=>x.symbol==k)||{};const L=[["^GSPC","S&P500"],["^IXIC","나스닥"],["^SOX","반도체"],["EWY","한국ETF"],["^VIX","VIX"]];
