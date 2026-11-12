@@ -181,7 +181,7 @@ async function rtTick(){if(document.hidden||!mktOpen())return;
 setInterval(rtTick,10000);window.addEventListener("load",()=>setTimeout(rtTick,300));document.addEventListener("visibilitychange",rtTick);
 /* routing */
 let VIEW="kr",SEG="매수후보",CUR=null,TF="D",TIMER=null,LIVE=null,ZN=null,ZO=0;
-function go(v,arg){if(!gate())return;VIEW=v;clearInterval(TIMER);setTimeout(rtTick,300);setTimeout(rtTick,1500);document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.v==v));window.scrollTo(0,0);
+function go(v,arg){if(!gate())return;VIEW=v;clearInterval(TIMER);setTimeout(rtTick,300);setTimeout(rtTick,1500);setTimeout(nightTick,300);document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.v==v));window.scrollTo(0,0);
   $("#view").innerHTML='<div class="empty">불러오는 중…</div>';
   ({kr:viewKR,us:viewUS,macro:viewMacro,news:viewNews,paper:viewPaper,score:viewScore,find:viewFind,stock:viewStock})[v](arg).catch(e=>{$("#view").innerHTML=`<div class="card"><div class="empty">자료를 불러오지 못했습니다.<br><span class="note">${esc(e.message)}</span></div></div>`})}
 /* lists */
@@ -215,13 +215,20 @@ function usLink(code,um,gl){if(!um||!um.map||!um.map[code])return"";const [sym,l
 function idxCard(name,v,c,sub){const cl=c>0?"up":c<0?"dn":"";return `<div class="card ixc" data-rti="${name=="코스피"?"KOSPI":name=="코스닥"?"KOSDAQ":""}"><span class="ixn">${esc(name)}</span><b class="ixv">${v==null?"-":Number(v).toLocaleString("ko-KR",{minimumFractionDigits:2,maximumFractionDigits:2})}</b><span class="ixp ${cl}">${c==null?"":(c>0?"▲ +":c<0?"▼ ":"")+Number(c).toFixed(2)+"%"}</span><span class="ixs">${esc(sub||"")}</span></div>`}
 function isNight(){const d=new Date(Date.now()+9*3600e3),m=d.getUTCHours()*60+d.getUTCMinutes();return m>=930||m<360}
 function nightOpen(){const h=new Date(Date.now()+9*3600e3).getUTCHours();return h>=18||h<6}
+/* 야간: 중계서버 /night (코스피200 선물 주간종가 + 나스닥·S&P 선물 실시간) */
+let NIGHT=null;try{NIGHT=JSON.parse(localStorage.getItem("goat_night"))}catch(e){}
+function nightCards(N){const f2=v=>v==null?"-":Number(v).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+ const pp=c=>c==null?"":`<span class="ixp ${c>0?"up":c<0?"dn":""}">${(c>0?"▲ +":c<0?"▼ ":"")+Number(c).toFixed(2)}%</span>`;
+ if(!N||!N.fut)return `<div class="card ixc night"><span class="ixn">🌙 야선</span><span class="ixs">불러오는 중…</span></div><div class="card ixc night"><span class="ixn">나스닥 선물</span><span class="ixs">불러오는 중…</span></div>`;
+ const nq=N["NQ=F"]||[],d=nq[0]&&nq[3]?(nq[0]/nq[3]-1)*100:null,est=N.fut[0]&&d!=null?N.fut[0]*(1+d/100):null,ec=est&&N.fut[0]?((est/N.fut[0])*(1+N.fut[1]/100)-1)*100:null;
+ return `<div class="card ixc night"><span class="ixn">🌙 야선 추정 <small style="font-weight:400">(코스피200 선물)</small></span><b class="ixv">${f2(est)}</b>${pp(ec)}<span class="ixs">주간 종가 ${f2(N.fut[0])} (${N.fut[1]>0?"+":""}${N.fut[1]}%) × 장마감 뒤 나스닥선물 ${d==null?"-":(d>0?"+":"")+d.toFixed(2)+"%"} · 추정치</span></div>
+ <div class="card ixc night"><span class="ixn">나스닥 선물</span><b class="ixv">${f2(nq[0])}</b>${pp(nq[1])}<span class="ixs"><span class="rtdot"></span>실시간 ${esc(N.t.slice(0,5))} · 장마감 뒤 ${d==null?"-":(d>0?"+":"")+d.toFixed(2)+"%"}</span></div>`}
+async function nightTick(){if(!isNight()||document.hidden)return;try{NIGHT=await fetch(RT+"/night").then(r=>r.json());try{localStorage.setItem("goat_night",JSON.stringify(NIGHT))}catch(e){}}catch(e){return}
+ const el=document.getElementById("nightrow");if(el)el.innerHTML=nightCards(NIGHT)}
+setInterval(nightTick,30000);window.addEventListener("load",()=>setTimeout(nightTick,200));
 function idxRow(gl,nt){const g=k=>(gl||[]).find(x=>x.symbol==k)||{};const ks=g("^KS11"),kq=g("^KQ11");
  let h=`<div class="ixrow">${idxCard("코스피",ks.close,ks.change_pct,(ks.date||"")+(/장중/.test(ks.date||"")?"":" 종가"))}${idxCard("코스닥",kq.close,kq.change_pct,(kq.date||"")+(/장중/.test(kq.date||"")?"":" 종가"))}</div>`;
- if(isNight()){const fresh=nt&&nt.time&&(Date.now()-Date.parse(nt.time))<3*3600e3;
-  const t=fresh?esc(String(nt.time).slice(11,16))+" 기준":"";
-  const one=(lab,v,c)=>`<div class="card ixc night"><span class="ixn">${lab}</span><b class="ixv">${v==null?"-":Number(v).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</b><span class="ixp ${c>0?"up":c<0?"dn":""}">${c==null?"":(c>0?"▲ +":c<0?"▼ ":"")+Number(c).toFixed(2)+"%"}</span><span class="ixs">${t}</span></div>`;
-  h+=fresh?`<div class="ixrow">${one("🌙 야선",nt.price,nt.change_pct)}${nt.nq?one("나스닥 선물",nt.nq.price,nt.nq.change_pct):""}</div>`
-  :`<div class="card ixc night"><span class="ixn">🌙 야선 · 나스닥 선물</span><span class="ixs">${nightOpen()?"야간장 진행 중(오후 6시~새벽 6시). 야선 시세 연결 작업 중이라 아직 숫자가 안 나옵니다.":"본장 마감. 코스피200 야간선물은 오후 6시에 열려 새벽 6시까지 거래됩니다."}</span></div>`}
+ if(isNight())h+=`<div class="ixrow" id="nightrow">${nightCards(NIGHT)}</div>`;
  return h}
 async function shareApp(){const url=location.origin+location.pathname;const d={title:"GOAT STOCK 3일 무료 체험",text:"코스피·미장 레이더 — 어젯밤 미장으로 본 오늘 시초가 예상, 종목별 매도경고까지. 3일 무료로 써 보세요.",url};
  try{if(navigator.share){await navigator.share(d);return}}catch(e){if(e&&e.name=="AbortError")return}

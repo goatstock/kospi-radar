@@ -117,15 +117,25 @@ export default {
       return { t: kst(), b: (j || []).map(x => [x.localDateTime.slice(8, 12), x.openPrice, x.highPrice, x.lowPrice, x.currentPrice, x.accumulatedTradingVolume]) };
     });
     if (u.pathname === "/fx") return cached(req, ctx, fxAll);
+    if (u.pathname === "/night") return cached(req, ctx, async () => {
+      const o = {};
+      try { const j = await (await fetch("https://m.stock.naver.com/api/index/FUT/basic", { headers: H })).json(); o.fut = [num(j.closePrice), num(j.fluctuationsRatio), j.marketStatus, j.localTradedAt]; o.raw = JSON.stringify(j).slice(0, 700); } catch (e) { o.ferr = e.message; }
+      try { const j = await (await fetch("https://polling.finance.naver.com/api/realtime/domestic/index/FUT", { headers: H })).json(); o.poll = JSON.stringify(j).slice(0, 700); } catch (e) { o.perr = e.message; }
+      for (const s of ["NQ=F", "ES=F", "EWY"]) {
+        try { const j = await (await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(s)}?range=1d&interval=5m`, { headers: { "User-Agent": "Mozilla/5.0" } })).json(); const m = j.chart.result[0].meta;
+          o[s] = [m.regularMarketPrice, m.chartPreviousClose ? (m.regularMarketPrice / m.chartPreviousClose - 1) * 100 : null, m.regularMarketTime]; } catch (e) {}
+      }
+      return { t: kst(), ...o };
+    });
     if (u.pathname === "/trtest") return cors(await llm(env, ["Nvidia slides as Fed holds rates", "Oil jumps on supply fears"]));
     if (u.pathname === "/news") {
       // 바로 응답: 보관본이 60초 넘었으면 보관본을 주고 뒤에서 새로 만듦
       const c = caches.default, k = new Request("https://cache.local/news3"), hit = await c.match(k);
       const H2 = { "content-type": "application/json; charset=utf-8", "access-control-allow-origin": ORIGIN };
-      const make = async () => { const body = JSON.stringify(await news(env)); await c.put(k, new Response(body, { headers: { "cache-control": "public, max-age=3600" } })); return body; };
+      const make = async () => { const body = JSON.stringify(await news(env)); await c.put(k, new Response(body, { headers: { "cache-control": "public, max-age=86400" } })); return body; };
       if (hit) { const body = await hit.text(); let at = 0; try { at = JSON.parse(body).at || 0; } catch (e) {} if (Date.now() - at > 60000) ctx.waitUntil(make()); return new Response(body, { headers: H2 }); }
       return new Response(await make(), { headers: H2 });
     }
-    return cors({ ok: true, use: "/q?c=005930  /i  /m?c=000660  /news  /fx" });
+    return cors({ ok: true, use: "/q?c=005930  /i  /m?c=000660  /news  /fx  /night" });
   }
 };
