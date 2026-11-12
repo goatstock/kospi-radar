@@ -217,6 +217,10 @@ async function flowList(rows,seg){let F;try{F=await J("data/KR/flowtop.json")}ca
  if(!L.length)return head+'<div class="empty">순매수 종목이 없습니다</div>';
  return head+'<div class="list">'+L.map(x=>{const r=by[x[0]],w=r[3]=="매수후보"?" b":r[3]=="매도경고"||r[3]=="주의"?" w":r[3]=="중립"?" n":"";
   return `<button class="row" onclick="go('stock',{code:'${esc(r[0])}',m:'KR'})"><span class="sc${w}">${r[2]>0?"+":""}${Math.round(r[2])}</span><span class="nm"><b>${esc(r[1])}</b><span><b class="up" style="font-size:12.5px">${eok(x[1])}</b> (5일 ${eok(x[2])}) · ${esc(r[3])}</span></span><span class="px${mktOpen()?" stale":""}" data-rt="${esc(r[0])}"><b>${won(r[4],"KR")}</b>${pct(r[5])}</span></button>`}).join("")+'</div>'}
+/* 매수후보가 적을 때: 점수는 높지만 시장 조건·거래대금 때문에 보류된 상위 종목을 이어서 보여 줌 */
+function holdMore(rows,seg,m){if(seg!="매수후보")return"";const n=rows.filter(r=>r[3]=="매수후보").length;if(n>=8)return"";
+ const L=rows.filter(r=>r[3]=="관심"&&r[2]>=30).sort((a,b)=>b[2]-a[2]).slice(0,10);if(!L.length)return"";
+ return `<div class="snote" style="margin-top:12px"><b>대기 중인 상위 종목 ${L.length}</b><span>점수는 매수후보 기준(+30) 이상이지만, 지금 시장이 ${m=="US"?"하락·조정 국면":"하락·조정 국면"}이라 조건(지수보다 강함·20일선 위)을 못 넘어 보류된 종목입니다. 장이 돌아서면 먼저 매수후보로 올라올 후보들입니다.</span></div>`+rowsHTML(L,m)}
 function pickRows(rows,seg){let L;
   if(seg=="거래대금")L=rows.slice().sort((a,b)=>(b[8]||0)-(a[8]||0));
   else{L=rows.filter(r=>r[3]==seg);L.sort((a,b)=>seg=="매도경고"||seg=="주의"?a[2]-b[2]:b[2]-a[2])}
@@ -296,7 +300,7 @@ const SNOTE={"매수후보":["+30점 이상","20일 평균 거래대금 10억 �
 function scoreNote(seg){if(seg=="거래대금")return '<div class="snote"><b>거래대금 상위</b><span>그날 사고판 금액(가격×거래량)이 많은 순서입니다. 점수와 관계없이 돈이 가장 많이 몰린 종목입니다.</span></div>';
  const x=SNOTE[seg];if(!x)return"";
  return `<div class="snote"><b>${esc(seg)} · ${x[0]}</b><span>${x[1]}.</span><span class="mu">점수(−100~+100) = 차트 추세 + 외국인·기관 수급 + 뉴스·공시 + 관심도 + 해외 연동을 더한 값. 점수 근거는 종목을 누르면 보입니다.</span></div>`}
-async function krList(){const ix=await J("data/KR/index.json");document.querySelectorAll("#seg button").forEach(b=>b.classList.toggle("on",b.dataset.s==SEG));$("#klist").innerHTML=(SEG=="외국인"||SEG=="기관"?await flowList(ix.rows,SEG):scoreNote(SEG)+rowsHTML(pickRows(ix.rows,SEG),"KR"))}
+async function krList(){const ix=await J("data/KR/index.json");document.querySelectorAll("#seg button").forEach(b=>b.classList.toggle("on",b.dataset.s==SEG));$("#klist").innerHTML=(SEG=="외국인"||SEG=="기관"?await flowList(ix.rows,SEG):scoreNote(SEG)+rowsHTML(pickRows(ix.rows,SEG),"KR")+holdMore(ix.rows,SEG,"KR"))}
 /* macro groups */
 const GROUPS=[["미국 지수·선물",["^GSPC","^IXIC","^DJI","^SOX","^VIX","ES=F","NQ=F"]],["한국·아시아",["^KS11","^KQ11","EWY","^N225","^HSI","000001.SS","^TWII"]],["유럽",["^GDAXI","^FTSE"]],["달러·금리",["KRW=X","DX-Y.NYB","^TNX"]],["원자재",["CL=F","BZ=F","GC=F","SI=F","HG=F","NG=F"]],["암호화폐",["BTC-USD","ETH-USD"]]];
 async function globalMap(){const [a,b]=await Promise.all([J("data/KR/global.json"),J("data/US/global.json")]);const g={};[...a,...b].forEach(x=>{if(!g[x.symbol]||x.date>g[x.symbol].date)g[x.symbol]=x});return g}
@@ -325,7 +329,7 @@ async function viewUS(){
   <div class="card"><h3>S&amp;P500 ${ix.rows.length}종목 신호 분포 · ${esc(ix.asof)}</h3>${distBar(counts(ix.rows))}</div>
   <div class="seg" id="useg">${["매수후보","관심","매도경고","주의","거래대금"].map(a=>`<button class="${a==SEG?"on":""}" data-s="${a}" onclick="SEG='${a}';usList()">${a=="거래대금"?"거래대금 상위":a}</button>`).join("")}</div>
   <div class="card" id="ulist"></div>${DISC}`;if(SEG=="외국인"||SEG=="기관")SEG="매수후보";usList()}
-async function usList(){const ix=await J("data/US/index.json");document.querySelectorAll("#useg button").forEach(b=>b.classList.toggle("on",b.dataset.s==SEG));$("#ulist").innerHTML=scoreNote(SEG)+rowsHTML(pickRows(ix.rows,SEG),"US");setTimeout(()=>usTick(true),100)}
+async function usList(){const ix=await J("data/US/index.json");document.querySelectorAll("#useg button").forEach(b=>b.classList.toggle("on",b.dataset.s==SEG));$("#ulist").innerHTML=scoreNote(SEG)+rowsHTML(pickRows(ix.rows,SEG),"US")+holdMore(ix.rows,SEG,"US");setTimeout(()=>usTick(true),100)}
 /* 환율 상세 (중계서버 /fx, 야후 기준 · 1분 보관) */
 const FXL=[["USDKRW=X","🇺🇸","미국 달러","1달러","원/달러가 오르면(원화 약세) 반도체·자동차·조선 같은 수출주 이익엔 유리하지만, 외국인은 환차손을 피하려 한국 주식을 파는 경향이 있습니다. 내리면(원화 강세) 외국인 매수가 들어오기 쉽고 항공·여행·내수주에 우호적입니다."],
  ["JPYKRW=X","🇯🇵","일본 엔","100엔","원/엔이 내리면(엔화 약세) 일본과 경쟁하는 자동차·기계·철강·조선의 가격 경쟁력이 떨어집니다. 엔화가 강해지면 우리 수출주가 반사이익을 봅니다. 엔화 급등은 '엔 캐리 청산' 신호로 세계 증시가 흔들릴 때가 많습니다."],
