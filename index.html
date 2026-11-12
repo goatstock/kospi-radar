@@ -268,9 +268,11 @@ const krTD=d=>{const w=new Date(d+"T00:00:00Z").getUTCDay();return w>0&&w<6&&!KR
 const nextKR=d=>{let t=new Date(d+"T00:00:00Z");do{t=new Date(t.getTime()+864e5)}while(!krTD(t.toISOString().slice(0,10)));return t.toISOString().slice(0,10)};
 const md=d=>{const t=new Date(d+"T00:00:00Z");return `${t.getUTCMonth()+1}/${t.getUTCDate()}(${"일월화수목금토"[t.getUTCDay()]})`};
 function usHead(meta){if(!meta)return null;const now=new Date(),td=kstD(now),hm=(now.getUTCHours()+9)%24*60+now.getUTCMinutes();
- const tgt=krTD(td)&&hm<930?td:nextKR(td),tl=tgt==td?`오늘 ${md(tgt)}`:`다음 장 ${md(tgt)}`;
- return meta.live?`🇺🇸 미장 진행 중(${md(meta.ny)} 장) → ${tl} 코스피 <span class="mu" style="font-size:12px;font-weight:500"><span class="rtdot"></span>실시간 ${esc(meta.t)} · 마감 전이라 잠정</span>`
-  :`🇺🇸 ${md(meta.ny)} 미장 마감 → ${tl} 코스피 <span class="mu" style="font-size:12px;font-weight:500">미국 마감 기준</span>`}
+ /* 미국 D일 장은 한국 D+1일 이후 첫 거래일 시초가에 반영 */
+ const tgt=nextKR(meta.ny),done=tgt==td&&hm>=krSess(td)[1],opened=tgt==td&&hm>=krSess(td)[0];
+ const tl=tgt==td?`오늘 ${md(tgt)} 코스피${done?" (장 마감·반영 끝)":opened?" (장중·시가 반영됨)":""}`:`${md(tgt)} 코스피`;
+ return meta.live?`🇺🇸 미장 진행 중(${md(meta.ny)} 장) → ${tl} <span class="mu" style="font-size:12px;font-weight:500"><span class="rtdot"></span>실시간 ${esc(meta.t)} · 마감 전이라 잠정</span>`
+  :`🇺🇸 ${md(meta.ny)} 미장 마감 → ${tl} <span class="mu" style="font-size:12px;font-weight:500">미국 마감 기준</span>`}
 async function usCardLive(){const el=document.getElementById("uscard");if(!el)return;const S=["^GSPC","^IXIC","^SOX","EWY","^VIX","KRW=X"];
  try{const j=await fetch(RT+"/uq?s="+S.map(encodeURIComponent).join(",")).then(r=>r.json());const gl=S.filter(k=>j.p[k]&&j.p[k][1]!=null).map(k=>({symbol:k,change_pct:j.p[k][1]}));
   const tm=Math.max(...S.slice(0,5).map(k=>(j.p[k]||[])[2]||0));if(!tm||gl.length<4)return;
