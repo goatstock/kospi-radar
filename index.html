@@ -213,9 +213,17 @@ async function usTick(force){if(document.hidden||(!force&&!usOpen()))return;
 setInterval(()=>usTick(),10000);document.addEventListener("visibilitychange",()=>usTick(true));window.addEventListener("focus",()=>usTick(true));
 /* routing */
 let VIEW="kr",SEG="매수후보",CUR=null,TF="D",TIMER=null,LIVE=null,ZN=null,ZO=0;
-function go(v,arg){if(!gate())return;VIEW=v;clearInterval(TIMER);setTimeout(rtTick,300);setTimeout(rtTick,1500);setTimeout(nightTick,300);setTimeout(()=>usTick(true),400);document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.v==v));window.scrollTo(0,0);
+/* 뒤로가기: 화면 이동마다 기록(목록 탭·필터·스크롤 위치 포함) → 휴대폰·브라우저 뒤로 버튼으로 이전 화면 복귀 */
+let NAVN=0;
+function navState(){return {v:VIEW,arg:CURARG,seg:SEG,mkf:typeof MKF!="undefined"?MKF:"전체",umf:typeof UMF!="undefined"?UMF:"전체",pm:typeof PMKT!="undefined"?PMKT:"KR",y:Math.round(scrollY),n:NAVN}}
+let CURARG=null;
+window.addEventListener("popstate",e=>{const st=e.state;if(!st||!st.v){return}SEG=st.seg||SEG;try{MKF=st.mkf;UMF=st.umf;PMKT=st.pm}catch(x){}NAVN=st.n||0;go(st.v,st.arg,st.y||0)});
+function goBack(fallback){if(NAVN>0)history.back();else go(fallback)}
+function go(v,arg,popY){if(!gate())return;
+  if(popY===undefined){try{if(!history.state||!history.state.v){VIEW=v;CURARG=arg||null;NAVN=0;history.replaceState(navState(),"")}else{history.replaceState(navState(),"");NAVN++;VIEW=v;CURARG=arg||null;history.pushState(navState(),"")}}catch(x){}}else{CURARG=arg||null}
+  VIEW=v;clearInterval(TIMER);setTimeout(rtTick,300);setTimeout(rtTick,1500);setTimeout(nightTick,300);setTimeout(()=>usTick(true),400);document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.v==v));window.scrollTo(0,0);
   $("#view").innerHTML='<div class="empty">불러오는 중…</div>';
-  ({kr:viewKR,us:viewUS,macro:viewMacro,news:viewNews,paper:viewPaper,score:viewScore,find:viewFind,stock:viewStock})[v](arg).catch(e=>{$("#view").innerHTML=`<div class="card"><div class="empty">자료를 불러오지 못했습니다.<br><span class="note">${esc(e.message)}</span></div></div>`})}
+  ({kr:viewKR,us:viewUS,macro:viewMacro,news:viewNews,paper:viewPaper,score:viewScore,find:viewFind,stock:viewStock})[v](arg).then(()=>{if(popY)setTimeout(()=>window.scrollTo(0,popY),350)}).catch(e=>{$("#view").innerHTML=`<div class="card"><div class="empty">자료를 불러오지 못했습니다.<br><span class="note">${esc(e.message)}</span></div></div>`})}
 /* lists */
 const ACTS=["매수후보","관심","중립","주의","매도경고"];
 function counts(rows){const c={};rows.forEach(r=>c[r[3]]=(c[r[3]]||0)+1);return c}
@@ -617,7 +625,7 @@ async function viewStock(a){
   const ac=s.action||"-",cls=ac=="매수후보"?" b":ac=="관심"?"":ac=="중립"?" n":" w";
   const R=rep&&rep.by_h&&rep.by_h.r30?rep.by_h.r30.rows:[];const rb=R.find(x=>x.level=="매수"),rs=R.find(x=>x.level=="매도");
   $("#view").innerHTML=`
-  <div style="display:flex;align-items:center;gap:8px"><button class="iconbtn" onclick="go('${m=="US"?"us":"kr"}')" aria-label="목록으로"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button><span class="mu" style="font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d.name)} · ${esc(d.code)}</span></div>
+  <div style="display:flex;align-items:center;gap:8px"><button class="iconbtn" onclick="goBack('${m=="US"?"us":"kr"}')" aria-label="뒤로"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button><span class="mu" style="font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d.name)} · ${esc(d.code)}</span></div>
   <div style="display:flex;align-items:center;gap:12px"><div style="min-width:0;flex:1" class="${(m=="KR"?mktOpen():usOpen())?"stale":""}"${m=="KR"?` data-rts="${esc(a.code)}"`:` data-rtus="${esc(a.code)}"`}><div class="big">${won(close,m)}</div><div style="font-size:15px;font-weight:600"><span class="rtp">${pct(s.change_pct)}</span> <span class="mu rtt" style="font-weight:400;font-size:12px">${esc(s.date||last[0]||"")} 종가</span></div></div>
    <div class="grade${cls}" role="img" aria-label="레이더 등급 ${esc(ac)} ${s.score!=null?Math.round(s.score)+"점":""}"><b>${esc(ac)}</b><span>${s.score!=null?(s.score>0?"+":"")+Math.round(s.score)+"점":""}</span></div></div>
   ${s.note?`<div style="display:flex;gap:8px;flex-wrap:wrap"><span class="chip n">${esc(s.note)}</span></div>`:""}
