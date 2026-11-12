@@ -214,12 +214,14 @@ function toast(t){let el=document.getElementById("toast");if(!el){el=document.cr
 async function viewKR(){
   const [ix,r,fl,meta,gl,nt,GM]=await Promise.all([J("data/KR/index.json"),J("data/regime.json").catch(()=>({})),J("data/market_flow.json").catch(()=>[]),J("data/meta.json"),J("data/KR/global.json").catch(()=>[]),fetch("data/KR/night.json?t="+Date.now()).then(x=>x.ok?x.json():null).catch(()=>null),J("data/KR/gapmodel.json").catch(()=>J("static/gapmodel.json")).catch(()=>null)]);
   const RG={"상승장":[20,"정상 매매. 매수후보 신호를 그대로 활용합니다."],"조정장":[40,"지수가 20일선 아래. 매수는 20일선 위에 있는 종목만, 비중은 절반."],"하락장":[70,"방어 모드. 현금 위주로 두고, 지수와 반대로 버티며 오르는 '역행 강세주'만 매수후보로 냅니다."],"급락장":[90,"최대 방어. 신규 매수 자제. 아주 강한 역행 강세주만 표시하고 보유 종목은 손절선을 엄격히 지킵니다."]};
-  const LV=await LIVEP();const kq=LV&&(LV.idx||[]).find(q=>q.code=="KOSPI");let prev=null,head=`${esc(r.date||ix.asof)} 장마감`;
+  const LV=await LIVEP();let kq=LV&&(LV.idx||[]).find(q=>q.code=="KOSPI");let LVT=LV&&LV.t;
+  if(mktOpen()){try{const k=await fetch(RT+"/i").then(x=>x.json());if(k.i&&k.i.KOSPI&&k.i.KOSPI[0]){kq={close:k.i.KOSPI[0],pct:k.i.KOSPI[1]};LVT=k.t.slice(0,5)}}catch(e){}}
+  let prev=null,head=`${esc(r.date||ix.asof)} 장마감`;
   if(kq&&kq.close&&r.kospi&&r.ma20&&r.ma60&&r.r5!=null&&r.r20!=null){const c=kq.close,b5=r.kospi/(1+r.r5/100),b20=r.kospi/(1+r.r20/100),r5=(c/b5-1)*100,r20=(c/b20-1)*100;
    let st=r5<=-6||r20<=-10?"급락장":(c<r.ma60||(c<r.ma20&&r20<=-4))?"하락장":c<r.ma20?"조정장":"상승장";
    if(st!=r.state){prev=r.state}
    r.reasons=[`코스피 ${c.toLocaleString("ko-KR",{maximumFractionDigits:0})} (장중 ${kq.pct>0?"+":""}${(kq.pct||0).toFixed(2)}%) · 20일선 ${Math.round(r.ma20).toLocaleString()} · 60일선 ${Math.round(r.ma60).toLocaleString()}`,`5일 ${r5>0?"+":""}${r5.toFixed(1)}% · 20일 ${r20>0?"+":""}${r20.toFixed(1)}%`].concat((r.reasons||[]).slice(2));
-   r.state=st;r.cash=RG[st][0];r.msg=RG[st][1];head=`${esc(LV.t)} 장중 기준`}
+   r.state=st;r.cash=RG[st][0];r.msg=RG[st][1];head=`${esc(LVT)} 장중 기준`}
   const col=r.state=="상승장"?"var(--up)":r.state=="조정장"?"#F5A524":"var(--dn)";
   $("#view").innerHTML=`
   <div class="card hero"><h3>오늘의 시장 국면 · ${head}${prev?` <span style="background:rgba(255,255,255,.22);border-radius:999px;padding:2px 8px;font-size:11px">어제 장마감: ${esc(prev)}</span>`:""}</h3>
