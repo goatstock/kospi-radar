@@ -275,7 +275,7 @@ async function usCardLive(){const el=document.getElementById("uscard");if(!el)re
  try{const j=await fetch(RT+"/uq?s="+S.map(encodeURIComponent).join(",")).then(r=>r.json());const gl=S.filter(k=>j.p[k]&&j.p[k][1]!=null).map(k=>({symbol:k,change_pct:j.p[k][1]}));
   const tm=Math.max(...S.map(k=>(j.p[k]||[])[2]||0));if(!tm||gl.length<4)return;
   const ny=new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York"}).format(new Date(tm*1000));
-  const h=usCard(gl,GM,{live:usOpen(),ny,t:j.t});if(h&&document.getElementById("uscard"))document.getElementById("uscard").outerHTML=h}catch(e){}}
+  const h=usCard(gl,window.__GM,{live:usOpen(),ny,t:j.t});if(h&&document.getElementById("uscard"))document.getElementById("uscard").outerHTML=h}catch(e){}}
 function usCard(gl,gm,meta){const g=k=>(gl||[]).find(x=>x.symbol==k)||{};const L=[["^GSPC","S&P500"],["^IXIC","나스닥"],["^SOX","반도체"],["EWY","한국ETF"],["^VIX","VIX"]];
  const nq=g("^IXIC"),sx=g("^SOX");if(nq.change_pct==null||sx.change_pct==null)return"";
  const v=(nq.change_pct+sx.change_pct)/2;let i=USTAB.bins.findIndex(b=>v<=b);if(i<0)i=USTAB.bins.length;const r=USTAB.rows[i];
@@ -336,7 +336,7 @@ async function viewKR(){
    <div style="font-size:13px;color:var(--sub);line-height:1.55;margin-top:10px">${esc(r.msg||"")}</div>
    <div style="font-size:12px;color:var(--mute);line-height:1.6;margin-top:6px">${(r.reasons||[]).map(esc).join("<br>")}</div></div>
   ${idxRow(gl,nt)}
-  ${usCard(gl,GM)}
+  ${(window.__GM=GM,usCard(gl,GM))}
   ${fl.length?`<div class="card"><h3>코스피 투자자별 순매수 (억원, 시장 전체)</h3><div class="tbl"><table><tr><th>일자</th><th>외국인</th><th>기관</th><th>개인</th></tr>${fl.slice(0,7).map(f=>`<tr><td>${esc(String(f.date).slice(5))}</td>${["frgn","inst","indiv"].map(k=>`<td class="${f[k]>0?"up":"dn"}">${f[k]>0?"+":""}${fmt(f[k])}</td>`).join("")}</tr>`).join("")}</table></div></div>`:""}
   <div class="card"><h3>${ix.rows.length}종목 신호 분포 · ${esc(ix.asof)}</h3>${distBar(counts(ix.rows))}</div>
   <div class="mkf" id="mkf"></div>
