@@ -84,6 +84,7 @@ header b{font-size:17px;letter-spacing:-.02em;white-space:nowrap}
 .vs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}.vs div{background:var(--soft);border-radius:12px;padding:10px 6px;text-align:center;display:flex;flex-direction:column;gap:2px}.vs span{font-size:11.5px;color:var(--mute)}.vs b{font-size:17px;font-family:Inter,sans-serif}
 .pr{padding:11px 0;border-top:1px solid var(--line);cursor:pointer;display:flex;flex-direction:column;gap:4px}.pr:first-of-type{border-top:0}.pr1{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.pr1 b{font-size:15px}.pr1 small{font-size:12px}.pr2{display:grid;grid-template-columns:34px 1fr auto;gap:6px;font-size:12.5px;color:var(--sub);font-variant-numeric:tabular-nums}.pr2 span:first-child{color:var(--mute)}.pr2 span:last-child{text-align:right;font-weight:600}
 .psum{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:10px 0 6px}.psum div{background:var(--soft);border-radius:10px;padding:8px 4px;text-align:center;display:flex;flex-direction:column;gap:2px;min-width:0}.psum span{font-size:11px;color:var(--mute)}.psum b{font-size:13px;font-variant-numeric:tabular-nums;display:flex;flex-direction:column;align-items:center}.psum small{font-size:11px}
+.snote{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px;display:flex;flex-direction:column;gap:3px;font-size:12.5px;line-height:1.5;color:var(--sub)}.snote b{font-size:13.5px;color:var(--accD)}.snote .mu{font-size:11.5px}
 .news small{font-size:12px;color:var(--mute)}
 .tag{display:inline-block;font-size:11px;font-weight:700;border-radius:6px;padding:1px 6px;margin-right:6px;vertical-align:1px}
 .tag.p{background:var(--upA);color:var(--up)}.tag.m{background:var(--dnA);color:var(--dn)}
@@ -259,7 +260,15 @@ async function viewKR(){
   <div class="seg" id="seg">${["매수후보","관심","매도경고","주의","거래대금"].map(a=>`<button class="${a==SEG?"on":""}" data-s="${a}" onclick="SEG='${a}';krList()">${a=="거래대금"?"거래대금 상위":a}</button>`).join("")}</div>
   <div class="card" id="klist"></div><div class="card share"><div><b>지인에게 3일 무료 체험 보내기</b><span>링크만 보내면 받은 분 휴대폰에서 바로 열립니다. 설치·가입 없음.</span></div><button class="pill" onclick="shareApp()">공유하기</button></div>${DISC}`;
   krList()}
-async function krList(){const ix=await J("data/KR/index.json");document.querySelectorAll("#seg button").forEach(b=>b.classList.toggle("on",b.dataset.s==SEG));$("#klist").innerHTML=(SEG=="거래대금"?'<div class="note" style="padding-bottom:6px">거래대금 = 그날 사고판 금액 합계(가격×거래량). 돈이 가장 많이 몰린 순서입니다. 거래량(주식 수)과는 다릅니다.</div>':"")+rowsHTML(pickRows(ix.rows,SEG),"KR")}
+/* 탭별 점수 기준 한 줄 설명 */
+const SNOTE={"매수후보":["+30점 이상","20일 평균 거래대금 10억 이상, 시장 상태 조건 통과(하락장·급락장에선 지수보다 강하고 20일선 위인 종목만)"],
+ "관심":["+15 ~ +29점","또는 30점 이상이지만 거래대금이 적거나 시장 상태 조건을 못 넘은 종목"],
+ "매도경고":["−25점 이하","차트·수급·뉴스가 함께 나빠진 종목. 보유 중이면 점검 대상"],
+ "주의":["−12 ~ −24점","약해지기 시작한 종목. 매도경고 전 단계"]};
+function scoreNote(seg){if(seg=="거래대금")return '<div class="snote"><b>거래대금 상위</b><span>그날 사고판 금액(가격×거래량)이 많은 순서입니다. 점수와 관계없이 돈이 가장 많이 몰린 종목입니다.</span></div>';
+ const x=SNOTE[seg];if(!x)return"";
+ return `<div class="snote"><b>${esc(seg)} · ${x[0]}</b><span>${x[1]}.</span><span class="mu">점수(−100~+100) = 차트 추세 + 외국인·기관 수급 + 뉴스·공시 + 관심도 + 해외 연동을 더한 값. 점수 근거는 종목을 누르면 보입니다.</span></div>`}
+async function krList(){const ix=await J("data/KR/index.json");document.querySelectorAll("#seg button").forEach(b=>b.classList.toggle("on",b.dataset.s==SEG));$("#klist").innerHTML=scoreNote(SEG)+rowsHTML(pickRows(ix.rows,SEG),"KR")}
 /* macro groups */
 const GROUPS=[["미국 지수·선물",["^GSPC","^IXIC","^DJI","^SOX","^VIX","ES=F","NQ=F"]],["한국·아시아",["^KS11","^KQ11","EWY","^N225","^HSI","000001.SS","^TWII"]],["유럽",["^GDAXI","^FTSE"]],["달러·금리",["KRW=X","DX-Y.NYB","^TNX"]],["원자재",["CL=F","BZ=F","GC=F","SI=F","HG=F","NG=F"]],["암호화폐",["BTC-USD","ETH-USD"]]];
 async function globalMap(){const [a,b]=await Promise.all([J("data/KR/global.json"),J("data/US/global.json")]);const g={};[...a,...b].forEach(x=>{if(!g[x.symbol]||x.date>g[x.symbol].date)g[x.symbol]=x});return g}
@@ -272,7 +281,7 @@ async function viewUS(){
   <div class="card"><h3>S&amp;P500 ${ix.rows.length}종목 신호 분포 · ${esc(ix.asof)}</h3>${distBar(counts(ix.rows))}</div>
   <div class="seg" id="useg">${["매수후보","관심","매도경고","주의","거래대금"].map(a=>`<button class="${a==SEG?"on":""}" data-s="${a}" onclick="SEG='${a}';usList()">${a=="거래대금"?"거래대금 상위":a}</button>`).join("")}</div>
   <div class="card" id="ulist"></div>${DISC}`;usList()}
-async function usList(){const ix=await J("data/US/index.json");document.querySelectorAll("#useg button").forEach(b=>b.classList.toggle("on",b.dataset.s==SEG));$("#ulist").innerHTML=(SEG=="거래대금"?'<div class="note" style="padding-bottom:6px">거래대금 = 그날 사고판 금액 합계(가격×거래량). 돈이 가장 많이 몰린 순서입니다.</div>':"")+rowsHTML(pickRows(ix.rows,SEG),"US")}
+async function usList(){const ix=await J("data/US/index.json");document.querySelectorAll("#useg button").forEach(b=>b.classList.toggle("on",b.dataset.s==SEG));$("#ulist").innerHTML=scoreNote(SEG)+rowsHTML(pickRows(ix.rows,SEG),"US")}
 /* 환율 상세 (중계서버 /fx, 야후 기준 · 1분 보관) */
 const FXL=[["USDKRW=X","🇺🇸","미국 달러","1달러","원/달러가 오르면(원화 약세) 반도체·자동차·조선 같은 수출주 이익엔 유리하지만, 외국인은 환차손을 피하려 한국 주식을 파는 경향이 있습니다. 내리면(원화 강세) 외국인 매수가 들어오기 쉽고 항공·여행·내수주에 우호적입니다."],
  ["JPYKRW=X","🇯🇵","일본 엔","100엔","원/엔이 내리면(엔화 약세) 일본과 경쟁하는 자동차·기계·철강·조선의 가격 경쟁력이 떨어집니다. 엔화가 강해지면 우리 수출주가 반사이익을 봅니다. 엔화 급등은 '엔 캐리 청산' 신호로 세계 증시가 흔들릴 때가 많습니다."],
