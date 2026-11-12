@@ -65,6 +65,7 @@ header b{font-size:17px;letter-spacing:-.02em;white-space:nowrap}
 .usg{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}.usc{background:var(--soft);border-radius:12px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}.usc span{font-size:10.5px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.usc b{font-family:Inter,sans-serif;font-size:14px;font-weight:800}.usv{margin-top:10px;background:var(--accBg);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:3px}.usv b{font-size:14px;color:var(--accD)}.usv span{font-size:12px;color:var(--sub);line-height:1.5}
 .gapp{margin-top:10px;display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 10px;background:linear-gradient(125deg,#7048FF,#A23CFF);color:#fff;border-radius:14px;padding:12px 14px}.gapp span{font-size:14px;font-weight:700;display:flex;flex-direction:column}.gapp small{font-size:11px;font-weight:500;opacity:.8}.gapp b{font-family:Inter,sans-serif;font-size:26px;font-weight:800;color:#fff!important}.gapp em{grid-column:1/3;font-style:normal;font-size:11.5px;opacity:.85;line-height:1.45}.uslink{padding:14px 16px;display:flex;flex-direction:column;gap:6px}.ulh{display:flex;justify-content:space-between;align-items:center;gap:8px}.ulh span{font-size:13px;color:var(--sub);font-weight:600}.ulh b{font-size:14px;color:var(--accD);background:var(--accBg);border-radius:999px;padding:3px 10px;white-space:nowrap}.ulv{font-size:15px;font-weight:600}.ulx{font-size:12px;color:var(--sub);line-height:1.55}
 .share{display:flex;align-items:center;gap:12px;background:var(--accBg);border:0}.share>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}.share b{font-size:15px;color:var(--accD)}.share span{font-size:12px;color:var(--sub);line-height:1.45}.share .pill{flex:none;height:40px;padding:0 16px;font-weight:700}#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:#171827;color:#fff;font-size:13px;padding:10px 16px;border-radius:12px;opacity:0;transition:.25s;z-index:50;max-width:90vw;text-align:center}#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.rtdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#12A873;margin-right:4px;vertical-align:1px;animation:rtb 1.6s infinite}@keyframes rtb{50%{opacity:.25}}
 .chip{display:inline-block;font-size:13px;font-weight:700;border-radius:8px;padding:6px 10px;background:var(--upA);color:var(--up)}
 .chip.w{background:var(--dnA);color:var(--dn)}.chip.n{background:var(--soft);color:var(--sub)}
 .note{font-size:11px;color:var(--mute);line-height:1.55}
@@ -149,9 +150,23 @@ function agree(){shell(`<div class="card" style="display:flex;flex-direction:col
   $("#startBtn").onclick=()=>{tSet(Date.now());if(gate())go("kr")};return false}
 function ended(msg){shell(`<div class="card" style="display:flex;flex-direction:column;gap:12px"><b style="font-size:22px;letter-spacing:-.02em">체험이 끝났습니다</b>
   <div style="font-size:14px;color:var(--sub);line-height:1.6">${esc(msg)} 써 주셔서 감사합니다.<br>정식판 소식은 이 링크를 보내 드린 분께 문의해 주세요.</div>${DISC}</div>`);$("#badge").textContent="체험 종료";return false}
+/* 실시간: Cloudflare 중계 서버(goatstock-live)에서 장중 10초마다 */
+const RT="https://goatstock-live.ppopposs22.workers.dev";
+function mktOpen(){const d=new Date(Date.now()+9*3600e3),w=d.getUTCDay(),m=d.getUTCHours()*60+d.getUTCMinutes();return w>0&&w<6&&m>=539&&m<=936}
+async function rtTick(){if(document.hidden||!mktOpen())return;
+ const cs=[...new Set([...document.querySelectorAll("[data-rt],[data-rts]")].map(e=>e.dataset.rt||e.dataset.rts))].slice(0,60);
+ const ix=document.querySelectorAll("[data-rti]");
+ try{if(cs.length){const j=await fetch(RT+"/q?c="+cs.join(",")).then(r=>r.json());
+   document.querySelectorAll("[data-rt]").forEach(e=>{const q=j.p[e.dataset.rt];if(q&&q[0])e.innerHTML=`<b>${won(q[0],"KR")}</b>${pct(q[1])}`});
+   document.querySelectorAll("[data-rts]").forEach(e=>{const q=j.p[e.dataset.rts];if(q&&q[0]){e.querySelector(".big").textContent=won(q[0],"KR");e.querySelector(".rtp").innerHTML=pct(q[1]);e.querySelector(".rtt").innerHTML=`<span class="rtdot"></span>실시간 ${j.t}`}})}
+  if(ix.length){const k=await fetch(RT+"/i").then(r=>r.json());ix.forEach(e=>{const q=k.i[e.dataset.rti];if(!q||!q[0])return;const c=q[1];
+   e.querySelector(".ixv").textContent=Number(q[0]).toLocaleString("ko-KR",{minimumFractionDigits:2,maximumFractionDigits:2});
+   const pe=e.querySelector(".ixp");pe.className="ixp "+(c>0?"up":c<0?"dn":"");pe.textContent=(c>0?"▲ +":c<0?"▼ ":"")+Number(c).toFixed(2)+"%";
+   e.querySelector(".ixs").innerHTML=`<span class="rtdot"></span>실시간 ${k.t}`})}}catch(e){}}
+setInterval(rtTick,10000);document.addEventListener("visibilitychange",rtTick);
 /* routing */
 let VIEW="kr",SEG="매수후보",CUR=null,TF="D",TIMER=null,LIVE=null,ZN=null,ZO=0;
-function go(v,arg){if(!gate())return;VIEW=v;clearInterval(TIMER);document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.v==v));window.scrollTo(0,0);
+function go(v,arg){if(!gate())return;VIEW=v;clearInterval(TIMER);setTimeout(rtTick,1500);document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.v==v));window.scrollTo(0,0);
   $("#view").innerHTML='<div class="empty">불러오는 중…</div>';
   ({kr:viewKR,us:viewUS,macro:viewMacro,news:viewNews,score:viewScore,find:viewFind,stock:viewStock})[v](arg).catch(e=>{$("#view").innerHTML=`<div class="card"><div class="empty">자료를 불러오지 못했습니다.<br><span class="note">${esc(e.message)}</span></div></div>`})}
 /* lists */
@@ -162,7 +177,7 @@ function distBar(c){const k=[["매수후보","var(--up)"],["관심","#FFB3BA"],[
 function rowsHTML(rows,m){if(!rows.length)return '<div class="empty">지금 이 조건에 맞는 종목이 없습니다. 장마감 뒤 다시 확인해 주세요.</div>';
   return '<div class="list">'+rows.map(r=>{const w=r[3]=="매수후보"?" b":r[3]=="매도경고"||r[3]=="주의"?" w":r[3]=="중립"?" n":"";return `<button class="row" onclick="go('stock',{code:'${esc(r[0])}',m:'${m}'})"><span class="sc${w}">${r[2]>0?"+":""}${Math.round(r[2])}</span>
   <span class="nm"><b>${esc(r[1])}</b><span>${SEG=="거래대금"&&r[8]?`거래대금 ${money(r[8],m)} · ${esc(r[3])}`:`${esc(r[3])} · ${esc(r[7]||String(r[6]||"").replace(/^[+-]?\d+(\.\d+)?\s*/,""))}`}</span></span>
-  <span class="px"><b>${won(r[4],m)}</b>${pct(r[5])}</span></button>`}).join("")+'</div>'}
+  <span class="px"${m=="KR"?` data-rt="${esc(r[0])}"`:""}><b>${won(r[4],m)}</b>${pct(r[5])}</span></button>`}).join("")+'</div>'}
 function pickRows(rows,seg){let L;
   if(seg=="거래대금")L=rows.slice().sort((a,b)=>(b[8]||0)-(a[8]||0));
   else{L=rows.filter(r=>r[3]==seg);L.sort((a,b)=>seg=="매도경고"||seg=="주의"?a[2]-b[2]:b[2]-a[2])}
@@ -182,7 +197,7 @@ function usLink(code,um,gl){if(!um||!um.map||!um.map[code])return"";const [sym,l
  return `<div class="card uslink"><div class="ulh"><span>🇺🇸 이 종목을 움직이는 미국 쪽</span><b>${esc(lab)}</b></div>
  ${c!=null?`<div class="ulv">어젯밤 ${esc(lab)} <b class="${cl}">${c>0?"+":""}${c.toFixed(2)}%</b> <span class="mu">(${esc(x.date||"")})</span></div>`:""}
  <div class="ulx">지난 1년 상관 ${r.toFixed(2)} · ${esc(lab)}가 1% 움직이면 다음 날 이 종목 평균 ${b>0?"+":""}${b.toFixed(2)}%${pu!=null?` · ${esc(lab)} +2% 이상인 다음 날 이 종목 상승 ${pu}% (${nu}일)`:""}${pd!=null?` · -2% 이하인 다음 날 하락 ${pd}% (${nd}일)`:""}</div></div>`}
-function idxCard(name,v,c,sub){const cl=c>0?"up":c<0?"dn":"";return `<div class="card ixc"><span class="ixn">${esc(name)}</span><b class="ixv">${v==null?"-":Number(v).toLocaleString("ko-KR",{minimumFractionDigits:2,maximumFractionDigits:2})}</b><span class="ixp ${cl}">${c==null?"":(c>0?"▲ +":c<0?"▼ ":"")+Number(c).toFixed(2)+"%"}</span><span class="ixs">${esc(sub||"")}</span></div>`}
+function idxCard(name,v,c,sub){const cl=c>0?"up":c<0?"dn":"";return `<div class="card ixc" data-rti="${name=="코스피"?"KOSPI":name=="코스닥"?"KOSDAQ":""}"><span class="ixn">${esc(name)}</span><b class="ixv">${v==null?"-":Number(v).toLocaleString("ko-KR",{minimumFractionDigits:2,maximumFractionDigits:2})}</b><span class="ixp ${cl}">${c==null?"":(c>0?"▲ +":c<0?"▼ ":"")+Number(c).toFixed(2)+"%"}</span><span class="ixs">${esc(sub||"")}</span></div>`}
 function isNight(){const h=new Date(Date.now()+9*3600e3).getUTCHours();return h>=18||h<6}
 function idxRow(gl,nt){const g=k=>(gl||[]).find(x=>x.symbol==k)||{};const ks=g("^KS11"),kq=g("^KQ11");
  let h=`<div class="ixrow">${idxCard("코스피",ks.close,ks.change_pct,(ks.date||"")+(/장중/.test(ks.date||"")?"":" 종가"))}${idxCard("코스닥",kq.close,kq.change_pct,(kq.date||"")+(/장중/.test(kq.date||"")?"":" 종가"))}</div>`;
@@ -352,7 +367,7 @@ async function viewStock(a){
   const R=rep&&rep.by_h&&rep.by_h.r30?rep.by_h.r30.rows:[];const rb=R.find(x=>x.level=="매수"),rs=R.find(x=>x.level=="매도");
   $("#view").innerHTML=`
   <div style="display:flex;align-items:center;gap:8px"><button class="iconbtn" onclick="go('${m=="US"?"us":"kr"}')" aria-label="목록으로"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button><span class="mu" style="font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(d.name)} · ${esc(d.code)}</span></div>
-  <div style="display:flex;align-items:center;gap:12px"><div style="min-width:0;flex:1"><div class="big">${won(close,m)}</div><div style="font-size:15px;font-weight:600">${pct(s.change_pct)} <span class="mu" style="font-weight:400;font-size:12px">${esc(s.date||last[0]||"")} 종가</span></div></div>
+  <div style="display:flex;align-items:center;gap:12px"><div style="min-width:0;flex:1"${m=="KR"?` data-rts="${esc(a.code)}"`:""}><div class="big">${won(close,m)}</div><div style="font-size:15px;font-weight:600"><span class="rtp">${pct(s.change_pct)}</span> <span class="mu rtt" style="font-weight:400;font-size:12px">${esc(s.date||last[0]||"")} 종가</span></div></div>
    <div class="grade${cls}" role="img" aria-label="레이더 등급 ${esc(ac)} ${s.score!=null?Math.round(s.score)+"점":""}"><b>${esc(ac)}</b><span>${s.score!=null?(s.score>0?"+":"")+Math.round(s.score)+"점":""}</span></div></div>
   ${s.note?`<div style="display:flex;gap:8px;flex-wrap:wrap"><span class="chip n">${esc(s.note)}</span></div>`:""}
   ${usLink(a.code,UM,UG)}
