@@ -62,6 +62,7 @@ header b{font-size:17px;letter-spacing:-.02em;white-space:nowrap}
 .sc.b{background:linear-gradient(125deg,#E53950,#FF6B5E);color:#fff}.grade.b{background:linear-gradient(140deg,#E53950,#FF6B5E);box-shadow:0 8px 20px rgba(229,57,80,.28)}body[data-mt=dark] .sc.b,body[data-mt=dark] .grade.b{background:linear-gradient(125deg,#FF4D66,#FF7A6B)}
 .ixgo{cursor:pointer;transition:transform .12s,box-shadow .12s}.ixgo:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(112,72,255,.16)}.ixgo:active{transform:scale(.98)}.ixgo .ixs::after{content:" ›";color:var(--acc);font-weight:700}.ixhint{font-size:12px;color:var(--sub);margin:0 2px -2px;line-height:1.5}.ixhint b{color:var(--acc)}
 .mkf{display:flex;gap:6px;margin-bottom:-4px}.mkf button{border:1px solid var(--line);background:var(--card);color:var(--sub);border-radius:999px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer}.mkf button.on{background:var(--acc);border-color:var(--acc);color:#fff}.mkf{flex-wrap:wrap;align-items:center}.mkn{font-size:11.5px;color:var(--mute);flex-basis:100%;margin-top:2px}.mkf small{font-size:11px;opacity:.8;font-weight:500}
+.offb{position:sticky;top:0;z-index:50;background:#F28C28;color:#fff;font-size:12.5px;font-weight:700;padding:8px 14px;text-align:center}
 .ixb{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.ixb .ixc{padding:11px 10px;border-radius:14px;gap:1px}.ixb .ixn{font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ixb .ixv{font-size:16px;letter-spacing:-.4px}.ixb .ixp{font-size:12px}.ixb .ixs{font-size:10.5px}
 .ixrow{display:grid;grid-template-columns:1fr 1fr;gap:12px}.ixc{display:flex;flex-direction:column;gap:2px;padding:16px}.ixn{font-size:13px;font-weight:600;color:var(--sub)}.ixv{font-family:Inter,"Pretendard Variable",sans-serif;font-size:24px;font-weight:800;letter-spacing:-.8px;font-variant-numeric:tabular-nums;color:var(--ink)}.ixp{font-family:Inter,sans-serif;font-size:14px;font-weight:700}.ixs{font-size:12px;color:var(--mute)}.ngrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:6px}.ngt{display:flex;flex-direction:column;gap:2px;min-width:0}.ixc.night{background:linear-gradient(125deg,#1E1B4B,#3B2A7A);border:0;color:#fff}.ixc.night .ixn,.ixc.night .ixs{color:rgba(255,255,255,.8)}.ixc.night .ixv{color:#fff}.ixc.night .up{color:#FF8A9A}.ixc.night .dn{color:#8DB8FF}
 .vbad{margin-top:8px;background:#FFF4E5;border:1px solid #F5C58A;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;font-size:12.5px;line-height:1.5;color:#7A4A12}.vbad b{font-size:13.5px;color:#B45309}body[data-mt=dark] .vbad{background:rgba(242,140,40,.12);border-color:rgba(242,140,40,.4);color:#FFD7A8}body[data-mt=dark] .vbad b{color:#FFAA55}
@@ -125,15 +126,15 @@ const pct=v=>v==null?'<span class="mu">-</span>':`<span class="${v>0?"up":v<0?"d
 const money=(v,m)=>m=="US"?(v>=1e9?"$"+(v/1e9).toFixed(1)+"B":"$"+(v/1e6).toFixed(0)+"M"):(v>=1e12?(v/1e12).toFixed(2)+"조원":Math.round(v/1e8).toLocaleString("ko-KR")+"억원");
 const won=(v,m)=>m=="US"?"$"+fmt(v,2):fmt(v)+"원";
 const CACHE={};
-const J0=p=>CACHE[p]||(CACHE[p]=fetch(p).then(r=>{if(!r.ok)throw new Error("자료를 찾지 못했습니다");return r.json()}).catch(e=>{delete CACHE[p];throw e}));
+const J0=p=>CACHE[p]||(CACHE[p]=fetch(p).then(r=>{if(!r.ok)throw new Error("자료를 찾지 못했습니다");if(r.headers.get("X-From-Cache"))offBanner(true);return r.json()}).catch(e=>{delete CACHE[p];throw e}));
 const kstDay=()=>new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
 let LP=null;const LIVEP=()=>LP||(LP=(async()=>{let j=null;try{j=await fetch("data/live/prices.json?t="+Math.floor(Date.now()/300000)).then(r=>r.ok?r.json():null);if(j&&j.day!=kstDay())j=null}catch(e){}
  if(mktOpen()){try{const k=await fetch("https://goatstock-live.ppopposs22.workers.dev/i").then(r=>r.json());j=j||{day:kstDay(),p:{}};j.t=k.t.slice(0,5);j.idx=Object.entries(k.i).map(([c,q])=>({code:c,close:q[0],pct:q[1]}));j.rt=true}catch(e){}}
  setTimeout(()=>LP=null,8000);return j})());
 async function J(p){const d=await J0(p);if(!/^data\/KR\//.test(p))return d;const L=await LIVEP();if(!L)return d;
- if(p=="data/KR/index.json"&&d.rows&&!d._lv){d.rows.forEach(r=>{const q=L.p[r[0]];if(q){r[4]=q[0];if(q[1]!=null)r[5]=q[1]}});d._lv=L.t}
+ if(p=="data/KR/index.json"&&d.rows&&d._lv!==L.t){d.rows.forEach(r=>{const q=L.p[r[0]];if(q){r[4]=q[0];if(q[1]!=null)r[5]=q[1]}});d._lv=L.t}
  else if(p=="data/KR/global.json"&&Array.isArray(d)){(L.idx||[]).forEach(q=>{const s=q.code=="KOSPI"?"^KS11":q.code=="KOSDAQ"?"^KQ11":null;const x=d.find(y=>y.symbol==s);if(x&&q.close){x.close=q.close;x.change_pct=q.pct;x.date=L.day+" "+L.t+" 장중"}});d._lv=L.t}
- else if(d&&d.signal&&d.code&&!d._lv){const q=L.p[d.code];if(q){d.signal.close=q[0];if(q[1]!=null)d.signal.change_pct=q[1];d._lv=L.t}}
+ else if(d&&d.signal&&d.code&&d._lv!==L.t){const q=L.p[d.code];if(q){d.signal.close=q[0];if(q[1]!=null)d.signal.change_pct=q[1];d._lv=L.t}}
  return d}
 const DISC='<div class="note">점수와 신호는 분석 참고 정보입니다. 수익을 보장하거나 개인별 투자 자문을 드리지 않으며, 투자 판단과 손익은 본인 책임입니다.</div>';
 /* theme */
@@ -159,7 +160,7 @@ function gate(){const now=Date.now(),st=tGet();
   $("#badge").textContent=leftText(end-now)+" 남음";$("#nav").style.display="";return true}
 function shell(h){$("#nav").style.display="none";$("#view").innerHTML=h}
 function agree(){shell(`<div class="card" style="display:flex;flex-direction:column;gap:12px"><img src="wordmark.png" alt="GOAT STOCK" style="width:240px;max-width:100%;align-self:center"><b style="font-size:22px;letter-spacing:-.02em;line-height:1.3;text-align:center">3일 무료 체험</b><span class="mu" style="font-size:13px;margin-top:-6px;text-align:center">코스피 · 미장 레이더</span>
-  <div style="font-size:14px;color:var(--sub);line-height:1.6">국내 950종목과 미국 S&amp;P500 533종목의 시세·수급·뉴스를 점수로 매긴 결과를 봅니다. 전 종목 차트(일·주·월), 투자자별 수급, 점수 근거, 세계 지표, 속보가 들어 있습니다. 시작을 누른 때부터 <b>72시간</b> 쓸 수 있습니다.</div>
+  <div style="font-size:14px;color:var(--sub);line-height:1.6">국내 <span class="metaKR">1,233</span>종목과 미국 S&amp;P500 <span class="metaUS">532</span>종목의 시세·수급·뉴스를 점수로 매긴 결과를 봅니다. 전 종목 차트(일·주·월), 투자자별 수급, 점수 근거, 세계 지표, 속보가 들어 있습니다. 시작을 누른 때부터 <b>72시간</b> 쓸 수 있습니다.</div>
   <div class="warnbox"><b>시작 전에 확인해 주세요</b><span>· 모든 정보는 참고용이며 수익을 보장하지 않습니다.<br>· 투자 판단과 손익은 본인 책임입니다.<br>· 개별 종목 상담이나 매매 대행은 하지 않습니다.<br>· 최근 검증에서 장중 '매수' 판정은 비용을 빼면 평균 손실이었습니다.</span></div>
   <button id="startBtn" class="pill" style="height:54px;border-radius:14px;font-size:16px">동의하고 3일 체험 시작</button>
   <div class="note">휴대폰에 앱으로 깔기: 갤럭시는 위쪽 [앱 설치] 버튼, 아이폰은 사파리 공유 버튼 → 홈 화면에 추가</div>
@@ -173,30 +174,41 @@ function ended(msg){shell(`<div class="card" style="display:flex;flex-direction:
 const RT="https://goatstock-live.ppopposs22.workers.dev";
 const KR_HOL=["2026-01-01","2026-02-16","2026-02-17","2026-02-18","2026-03-02","2026-05-01","2026-05-05","2026-05-25","2026-06-03","2026-08-17","2026-09-24","2026-09-25","2026-10-05","2026-10-09","2026-12-25","2026-12-31","2027-01-01"];
 const US_HOL=["2026-01-01","2026-01-19","2026-02-16","2026-04-03","2026-05-25","2026-06-19","2026-07-03","2026-09-07","2026-11-26","2026-12-25","2027-01-01"];
-function mktOpen(){const d=new Date(Date.now()+9*3600e3),w=d.getUTCDay(),m=d.getUTCHours()*60+d.getUTCMinutes();return w>0&&w<6&&!KR_HOL.includes(d.toISOString().slice(0,10))&&m>=540&&m<930}
+const KR_SPECIAL={"2026-11-19":[600,990],"2027-01-04":[600,930]};/* 수능일 10:00~16:30, 새해 첫 개장 10:00 */
+function krSess(day){return KR_SPECIAL[day]||[540,930]}
+function mktOpen(){const d=new Date(Date.now()+9*3600e3),w=d.getUTCDay(),m=d.getUTCHours()*60+d.getUTCMinutes(),day=d.toISOString().slice(0,10),[a,b]=krSess(day);return w>0&&w<6&&!KR_HOL.includes(day)&&m>=a&&m<b}
+/* 시세 수신 실패 감시: 30초 넘게 실패하면 '실시간' 표시를 내리고 마지막 정상 시각을 보여 줌 */
+const RTOK={KR:0,US:0};
+function rtFail(m){const last=RTOK[m];if(!last||Date.now()-last<30000)return;const t=new Date(last+9*3600e3).toISOString().slice(11,16);
+ document.querySelectorAll(m=="KR"?"[data-rti] .ixs,[data-rts] .rtt":"[data-rtui] .ixs,[data-rtus] .rtt").forEach(e=>e.innerHTML=`⚠ 시세 수신 실패 · 마지막 정상 ${t}`)}
+window.addEventListener("offline",()=>offBanner(true));window.addEventListener("online",()=>offBanner(false));
+function offBanner(on){let b=document.getElementById("offb");if(on&&!b){b=document.createElement("div");b.id="offb";b.className="offb";b.textContent="⚠ 오프라인 — 지금 보이는 시세·점수는 휴대폰에 저장된 과거 자료입니다";document.body.prepend(b)}else if(!on&&b)b.remove()}
+if(!navigator.onLine)setTimeout(()=>offBanner(true),500);
 async function rtTick(){if(document.hidden||!mktOpen())return;
  const cs=[...new Set([...document.querySelectorAll("[data-rt],[data-rts]")].map(e=>e.dataset.rt||e.dataset.rts))].slice(0,60);
  const ix=document.querySelectorAll("[data-rti]");
- try{if(cs.length){const j=await fetch(RT+"/q?c="+cs.join(",")).then(r=>r.json());
+ try{if(cs.length){const j=await fetch(RT+"/q?c="+cs.join(",")).then(r=>r.json());RTOK.KR=Date.now();
    document.querySelectorAll("[data-rt]").forEach(e=>{const q=j.p[e.dataset.rt];if(q&&q[0]){e.innerHTML=`<b>${won(q[0],"KR")}</b>${pct(q[1])}`;e.classList.remove("stale")}});
    document.querySelectorAll("[data-rts]").forEach(e=>{const q=j.p[e.dataset.rts];if(q&&q[0]){e.querySelector(".big").textContent=won(q[0],"KR");e.querySelector(".rtp").innerHTML=pct(q[1]);e.querySelector(".rtt").innerHTML=`<span class="rtdot"></span>실시간 ${j.t}`;e.classList.remove("stale")}})}
-  if(ix.length){const k=await fetch(RT+"/i").then(r=>r.json());ix.forEach(e=>{const q=k.i[e.dataset.rti];if(!q||!q[0])return;const c=q[1];
+  if(ix.length){const k=await fetch(RT+"/i").then(r=>r.json());RTOK.KR=Date.now();ix.forEach(e=>{const q=k.i[e.dataset.rti];if(!q||!q[0])return;const c=q[1];
    e.querySelector(".ixv").textContent=Number(q[0]).toLocaleString("ko-KR",{minimumFractionDigits:2,maximumFractionDigits:2});
    const pe=e.querySelector(".ixp");pe.className="ixp "+(c>0?"up":c<0?"dn":"");pe.textContent=(c>0?"▲ +":c<0?"▼ ":"")+Number(c).toFixed(2)+"%";
-   e.querySelector(".ixs").innerHTML=`<span class="rtdot"></span>실시간 ${k.t}`;e.classList.remove("stale")})}}catch(e){}}
+   e.querySelector(".ixs").innerHTML=`<span class="rtdot"></span>실시간 ${k.t}`;e.classList.remove("stale")})}}catch(e){rtFail("KR")}}
+async function fillMeta(){try{const mt=await J0("data/meta.json");document.querySelectorAll(".metaKR").forEach(e=>e.textContent=fmt(mt.KR.n));document.querySelectorAll(".metaUS").forEach(e=>e.textContent=fmt(mt.US.n))}catch(e){}}
+window.addEventListener("load",()=>{setTimeout(fillMeta,400);setTimeout(fillMeta,2500)});
 setInterval(rtTick,10000);window.addEventListener("load",()=>setTimeout(rtTick,300));document.addEventListener("visibilitychange",rtTick);
 /* 미장 실시간: 중계 서버 /uq (야후 기준), 뉴욕 정규장 중 10초마다 */
 function usOpen(){try{const p=new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit",weekday:"short",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date());const g=t=>p.find(x=>x.type==t).value,m=+g("hour")*60+ +g("minute"),day=`${g("year")}-${g("month")}-${g("day")}`;return !["Sat","Sun"].includes(g("weekday"))&&!US_HOL.includes(day)&&m>=570&&m<(day=="2026-11-27"||day=="2026-12-24"?780:960)}catch(e){return false}}
 async function usTick(force){if(document.hidden||(!force&&!usOpen()))return;
  const els=[...document.querySelectorAll("[data-rtu],[data-rtus],[data-rtui]")];if(!els.length)return;
  const cs=[...new Set(els.map(e=>e.dataset.rtu||e.dataset.rtus||e.dataset.rtui))].slice(0,60);
- try{const j=await fetch(RT+"/uq?s="+cs.map(encodeURIComponent).join(",")).then(r=>r.json());const lab=usOpen()?`<span class="rtdot"></span>실시간 ${j.t}`:"최근 종가";
+ try{const j=await fetch(RT+"/uq?s="+cs.map(encodeURIComponent).join(",")).then(r=>r.json());RTOK.US=Date.now();const qt=Math.max(...Object.values(j.p).map(q=>q[2]||0)),lag=qt?Date.now()/1000-qt:0,lab=usOpen()?(lag>300?`⚠ 시세 지연 ${Math.round(lag/60)}분 (거래소 ${new Date((qt+9*3600)*1000).toISOString().slice(11,16)})`:`<span class="rtdot"></span>실시간 ${j.t}`):"최근 종가";
   document.querySelectorAll("[data-rtu]").forEach(e=>{const q=j.p[e.dataset.rtu];if(q&&q[0]){e.innerHTML=`<b>${won(q[0],"US")}</b>${pct(q[1])}`;e.classList.remove("stale")}});
   document.querySelectorAll("[data-rtus]").forEach(e=>{const q=j.p[e.dataset.rtus];if(q&&q[0]){e.querySelector(".big").textContent=won(q[0],"US");e.querySelector(".rtp").innerHTML=pct(q[1]);const t=e.querySelector(".rtt");if(t)t.innerHTML=lab;e.classList.remove("stale")}});
   document.querySelectorAll("[data-rtui]").forEach(e=>{const q=j.p[e.dataset.rtui];if(!q||!q[0])return;const c=q[1];
    e.querySelector(".ixv").textContent=Number(q[0]).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
    const pe=e.querySelector(".ixp");pe.className="ixp "+(c>0?"up":c<0?"dn":"");pe.textContent=(c>0?"▲ +":c<0?"▼ ":"")+Number(c).toFixed(2)+"%";
-   e.querySelector(".ixs").innerHTML=lab;e.classList.remove("stale")})}catch(e){setTimeout(()=>usTick(true),3000)}}
+   e.querySelector(".ixs").innerHTML=lab;e.classList.remove("stale")})}catch(e){rtFail("US");setTimeout(()=>usTick(true),3000)}}
 setInterval(()=>usTick(),10000);document.addEventListener("visibilitychange",()=>usTick(true));window.addEventListener("focus",()=>usTick(true));
 /* routing */
 let VIEW="kr",SEG="매수후보",CUR=null,TF="D",TIMER=null,LIVE=null,ZN=null,ZO=0;
@@ -264,7 +276,7 @@ function nightCards(N){const f2=v=>v==null?"-":Number(v).toLocaleString("en-US",
  const pp=c=>c==null?"":`<span class="ixp ${c>0?"up":c<0?"dn":""}">${(c>0?"▲ +":c<0?"▼ ":"")+Number(c).toFixed(2)}%</span>`;
  if(!N||!N.fut)return `<div class="card ixc night"><span class="ixn">🌙 야선</span><span class="ixs">불러오는 중…</span></div><div class="card ixc night"><span class="ixn">나스닥 선물</span><span class="ixs">불러오는 중…</span></div>`;
  const nq=N["NQ=F"]||[],d=nq[0]&&nq[3]?(nq[0]/nq[3]-1)*100:null,est=N.fut[0]&&d!=null?N.fut[0]*(1+d/100):null,ec=est&&N.fut[0]?((est/N.fut[0])*(1+N.fut[1]/100)-1)*100:null;
- return `<div class="card ixc night"><span class="ixn">🌙 야선 추정 <small style="font-weight:400">(코스피200 선물)</small></span><b class="ixv">${f2(est)}</b>${pp(ec)}<span class="ixs">주간 종가 ${f2(N.fut[0])} (${N.fut[1]>0?"+":""}${N.fut[1]}%) × 장마감 뒤 나스닥선물 ${d==null?"-":(d>0?"+":"")+d.toFixed(2)+"%"} · 추정치</span></div>
+ return `<div class="card ixc night"><span class="ixn">🌙 야선 단순추정 <small style="font-weight:400">(실시세 아님)</small></span><b class="ixv">${f2(est)}</b>${pp(ec)}<span class="ixs">주간 종가 ${f2(N.fut[0])} (${N.fut[1]>0?"+":""}${N.fut[1]}%) × 장마감 뒤 나스닥선물 ${d==null?"-":(d>0?"+":"")+d.toFixed(2)+"%"} · 1:1 가정, 정확도 미검증</span></div>
  <div class="card ixc night"><span class="ixn">나스닥 선물</span><b class="ixv">${f2(nq[0])}</b>${pp(nq[1])}<span class="ixs"><span class="rtdot"></span>실시간 ${esc(N.t.slice(0,5))} · 장마감 뒤 ${d==null?"-":(d>0?"+":"")+d.toFixed(2)+"%"}</span></div>`}
 async function nightTick(){if(!isNight()||document.hidden)return;try{NIGHT=await fetch(RT+"/night").then(r=>r.json());try{localStorage.setItem("goat_night",JSON.stringify(NIGHT))}catch(e){}}catch(e){return}
  const el=document.getElementById("nightrow");if(el)el.innerHTML=nightCards(NIGHT)}
@@ -297,7 +309,7 @@ async function viewKR(){
   $("#view").innerHTML=`
   <div class="card hero"><h3>오늘의 시장 국면 · ${head}${prev?` <span style="background:rgba(255,255,255,.22);border-radius:999px;padding:2px 8px;font-size:11px">어제 장마감: ${esc(prev)}</span>`:""}</h3>
    <div style="display:flex;align-items:center;gap:14px"><span class="big hstate">${esc(r.state||"-")}</span>
-   <div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span class="mu">권장 현금 비중</span><b class="hcash">${r.cash??"-"}%</b></div><div class="bar"><i style="width:${r.cash||0}%"></i></div></div></div>
+   <div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span class="mu">방어 규칙상 현금 비중</span><b class="hcash">${r.cash??"-"}%</b></div><div class="bar"><i style="width:${r.cash||0}%"></i></div></div></div>
    <div style="font-size:13px;color:var(--sub);line-height:1.55;margin-top:10px">${esc(r.msg||"")}</div>
    <div style="font-size:12px;color:var(--mute);line-height:1.6;margin-top:6px">${(r.reasons||[]).map(esc).join("<br>")}</div></div>
   ${idxRow(gl,nt)}
@@ -337,7 +349,7 @@ async function viewUS(){
   $("#view").innerHTML=`
   ${R?`<div class="card hero"><h3>미장 시장 국면 · ${head}</h3>
    <div style="display:flex;align-items:center;gap:14px"><span class="big hstate">${esc(st)}</span>
-   <div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span class="mu">권장 현금 비중</span><b class="hcash">${R[0]}%</b></div><div class="bar"><i style="width:${R[0]}%"></i></div></div></div>
+   <div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span class="mu">방어 규칙상 현금 비중</span><b class="hcash">${R[0]}%</b></div><div class="bar"><i style="width:${R[0]}%"></i></div></div></div>
    <div style="font-size:13px;color:var(--sub);line-height:1.55;margin-top:10px">${esc(R[1])}</div>
    <div style="font-size:12px;color:var(--mute);line-height:1.6;margin-top:6px">${rs.map(esc).join("<br>")}</div></div>`:""}
   ${idxBoard(k=>{const v=gv(k,0);return v==null?(g[k]||{}):{close:v,change_pct:gv(k,1)}})}
@@ -451,43 +463,39 @@ function pSave(P,m="KR"){try{localStorage.setItem(PM[m].k,JSON.stringify(P));ret
 async function pQuote(codes,m="KR"){if(!codes.length)return{};try{const j=await fetch(RT+(m=="US"?"/uq?s=":"/q?c=")+codes.map(encodeURIComponent).join(",")).then(r=>r.json());return j.p||{}}catch(e){return{}}}
 function paperBox(code,name,close,m="KR"){const P=pLoad(m),h=P.pos[code],c=PM[m],nm=esc(String(name).replace(/'/g,""));
  return `<div class="card pp" id="pbox"><h3 style="display:flex;justify-content:space-between;align-items:center;margin:0">모의 매매 <span class="ptag">가상 ${c.seedTxt} · 실제 주문 아님</span></h3>
- <div class="note" style="padding:0">주문 가능 ${amt$(P.cash,m)}${h?` · 보유 ${fmt(h.n)}주 (평균 ${amt$(h.avg,m)})`:""}</div>
- <div class="row"><input id="pq" type="number" inputmode="numeric" min="1" step="1" placeholder="수량(주)" aria-label="수량"><button class="pbtn g" onclick="pMax('${esc(code)}',${Number(close)||0},'${m}')">최대</button></div>
+ <div class="note" style="padding:0">주문 가능 ${amt$(P.cash,m)}${h?` · 보유 ${fmt(h.n)}주 (평균 ${amt$(h.avg,m)}, 매수비용 포함)`:""}${(P.pend||[]).filter(o=>o.code==code).map(o=>` · <b>예약 ${o.side>0?"매수":"매도"} ${fmt(o.n)}주</b>`).join("")}</div>
+ <div class="row"><input id="pq" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="수량(주)" aria-label="수량"><button class="pbtn g" onclick="pMax('${esc(code)}',${Number(close)||0},'${m}')">최대</button></div>
  <div class="row"><button class="pbtn b" onclick="pTrade('${esc(code)}','${nm}',1,${Number(close)||0},'${m}')">매수</button><button class="pbtn s" onclick="pTrade('${esc(code)}','${nm}',-1,${Number(close)||0},'${m}')">매도</button></div>
- <div class="note" style="padding:0">누른 순간의 실시간 가격으로 체결된 것으로 칩니다(장 마감 뒤에는 마지막 가격). ${m=="US"?"수수료 0.1%를 근사로 뺍니다(양도세·환전 비용 제외, 달러 기준).":"수수료 0.015%, 매도 세금 0.2%를 근사로 뺍니다."}</div></div>`}
+ <div class="note" style="padding:0">장중에는 누른 순간의 실시간 가격으로 체결됩니다. 장이 닫혀 있으면 예약되어 다음 장 시작 뒤 첫 실시간 가격으로 체결됩니다. ${m=="US"?"수수료 0.1%를 근사로 뺍니다(양도세·환전 비용 제외, 달러 기준).":"수수료 0.015%, 매도 세금 0.2%를 근사로 뺍니다."}</div></div>`}
 async function pMax(code,close,m="KR"){const q=(await pQuote([code],m))[code];const px=q&&q[0]||close;const P=pLoad(m),h=P.pos[code];
  const buyMax=Math.floor(P.cash/(px*(1+PM[m].fee)));$("#pq").value=h&&h.n?h.n:buyMax;toast(h&&h.n?`보유 ${fmt(h.n)}주 (매수 최대 ${fmt(buyMax)}주)`:`매수 최대 ${fmt(buyMax)}주`)}
-async function pTrade(code,name,side,close,m="KR"){const n=Math.floor(Number($("#pq").value));if(!(n>0)){toast("수량을 입력하세요");return}
- const q=(await pQuote([code],m))[code];if(!(q&&q[0])&&mOpen(m)){toast("지금 시세를 받지 못해 주문을 막았습니다. 잠시 뒤 다시 눌러 주세요");return}
- const px=q&&q[0]||close;if(!px){toast("가격을 못 불러왔습니다");return}const atClose=!mOpen(m);
- const c=PM[m],P=pLoad(m),h=P.pos[code]||{n:0,avg:0,name};const amt=px*n,r2=v=>m=="US"?Math.round(v*100)/100:Math.round(v),fee=r2(amt*c.fee);
- if(side>0){if(amt+fee>P.cash){toast("주문 가능 금액이 부족합니다");return}
-  P.cash-=amt+fee;h.avg=(h.avg*h.n+amt)/(h.n+n);h.n+=n;h.name=name;P.pos[code]=h;P.log.unshift({t:Date.now(),code,name,side:"매수",n,px,fee,tax:0})}
- else{if(n>h.n){toast(`보유 수량(${fmt(h.n)}주)보다 많습니다`);return}
-  const tax=r2(amt*c.tax),pnl=r2((px-h.avg)*n-fee-tax);P.cash+=amt-fee-tax;h.n-=n;if(h.n>0)P.pos[code]=h;else delete P.pos[code];
-  P.log.unshift({t:Date.now(),code,name,side:"매도",n,px,fee,tax,pnl})}
- P.log[0].quote=q&&q[2]?q[2]:null;P.log[0].closeFill=atClose;P.log=P.log.slice(0,300);if(!pSave(P,m)){toast("저장에 실패해 이 거래는 기록되지 않았습니다");return}toast(`${name} ${fmt(n)}주 ${side>0?"매수":"매도"} · ${amt$(px,m)}${atClose?" (장 마감 가격)":""} (모의)`);
- const box=document.getElementById("pbox");if(box)box.outerHTML=paperBox(code,name,close,m)}
-/* 레이더 따라하기 계좌: 데이터 날짜가 바뀔 때마다 매수후보 점수 상위 5종목을 같은 금액으로 보유 */
-async function radarAcct(m="KR"){const c=PM[m];let A;try{A=JSON.parse(localStorage.getItem(c.rk))}catch(e){}
- const ix=await J(`data/${m}/index.json`);const rows=ix.rows||[];const by={};rows.forEach(r=>by[r[0]]=r);
- let bench=null;
- if(m=="KR"){try{const k=await fetch(RT+"/i").then(r=>r.json());bench=k.i.KOSPI[0]}catch(e){}if(!bench){try{const g=await globalMap();bench=g["^KS11"]&&g["^KS11"].close}catch(e){}}}
- else{try{const q=await pQuote(["^GSPC"],"US");bench=q["^GSPC"]&&q["^GSPC"][0]}catch(e){}if(!bench){try{const g=await globalMap();bench=g["^GSPC"]&&g["^GSPC"].close}catch(e){}}}
- if(!A||A.cash==null)A={cash:c.seed,pos:{},log:[],start:new Date().toISOString().slice(0,10),k0:bench,last:null};
- if(A.last!=ix.asof){const tgt=rows.filter(r=>r[3]=="매수후보"&&r[4]>0).sort((a,b)=>b[2]-a[2]).slice(0,5).map(r=>r[0]);
-  for(const k of Object.keys(A.pos))if(!tgt.includes(k)){const h=A.pos[k],px=by[k]?by[k][4]:h.avg,amt=px*h.n,fee=amt*c.fee,tax=amt*c.tax;A.cash+=amt-fee-tax;A.log.unshift({t:Date.now(),code:k,name:h.name,side:"매도",n:h.n,px,fee,tax,pnl:(px-h.avg)*h.n-fee-tax});delete A.pos[k]}
-  const nw=tgt.filter(k=>!A.pos[k]);if(nw.length){const per=A.cash/nw.length;for(const k of nw){const r=by[k],px=r[4],n=Math.floor(per/(px*(1+c.fee)));if(n<1)continue;const amt=px*n,fee=amt*c.fee;A.cash-=amt+fee;A.pos[k]={n,avg:px,name:r[1]};A.log.unshift({t:Date.now(),code:k,name:r[1],side:"매수",n,px,fee,tax:0})}}
-  A.last=ix.asof;A.log=A.log.slice(0,300);try{localStorage.setItem(c.rk,JSON.stringify(A))}catch(e){}}
- if(!A.k0&&bench){A.k0=bench;try{localStorage.setItem(c.rk,JSON.stringify(A))}catch(e){}}
- return {A,by,kospi:bench}}
+async function pTrade(code,name,side,close,m="KR"){const raw=String($("#pq").value).trim();
+ if(!/^[1-9]\d*$/.test(raw)){toast("수량은 1 이상의 정수(주)로만 입력하세요");return}const n=Number(raw);
+ const c=PM[m],P=pLoad(m);
+ if(!mOpen(m)){/* 장외 주문: 다음 정규장 첫 실시간 가격으로 체결 대기 */
+  P.pend=P.pend||[];P.pend.push({t:Date.now(),code,name,side,n});if(!pSave(P,m)){toast("저장에 실패해 주문이 접수되지 않았습니다");return}
+  toast(`${name} ${fmt(n)}주 ${side>0?"매수":"매도"} 예약 · 다음 장 시작 뒤 첫 실시간 가격으로 체결합니다 (모의)`);const box=document.getElementById("pbox");if(box)box.outerHTML=paperBox(code,name,close,m);return}
+ const q=(await pQuote([code],m))[code];if(!(q&&q[0])){toast("지금 시세를 받지 못해 주문을 막았습니다. 잠시 뒤 다시 눌러 주세요");return}
+ const r=pFill(P,m,{code,name,side,n},q);if(r){toast(r);return}
+ if(!pSave(P,m)){toast("저장에 실패해 이 거래는 기록되지 않았습니다");return}
+ toast(`${name} ${fmt(n)}주 ${side>0?"매수":"매도"} · ${amt$(q[0],m)} (모의)`);const box=document.getElementById("pbox");if(box)box.outerHTML=paperBox(code,name,close,m)}
+/* 체결 공통: 매수 비용은 평균단가에 포함, 매도 비용은 실현손익에서 차감 */
+function pFill(P,m,o,q){const c=PM[m],px=q[0],h=P.pos[o.code]||{n:0,avg:0,name:o.name},amt=px*o.n,r2=v=>m=="US"?Math.round(v*100)/100:Math.round(v),fee=r2(amt*c.fee);
+ if(o.side>0){if(amt+fee>P.cash)return"주문 가능 금액이 부족합니다";P.cash-=amt+fee;h.avg=(h.avg*h.n+amt+fee)/(h.n+o.n);h.n+=o.n;h.name=o.name;P.pos[o.code]=h;P.log.unshift({t:Date.now(),code:o.code,name:o.name,side:"매수",n:o.n,px,fee,tax:0,qt:q[2]||null})}
+ else{if(o.n>h.n)return`보유 수량(${fmt(h.n)}주)보다 많습니다`;const tax=r2(amt*c.tax),pnl=r2((px-h.avg)*o.n-fee-tax);P.cash+=amt-fee-tax;h.n-=o.n;if(h.n>0)P.pos[o.code]=h;else delete P.pos[o.code];P.log.unshift({t:Date.now(),code:o.code,name:o.name,side:"매도",n:o.n,px,fee,tax,pnl,qt:q[2]||null})}
+ P.log=P.log.slice(0,300);return null}
+/* 예약 주문 처리: 정규장이 열린 뒤 실시간 가격을 받으면 체결 */
+async function pPend(m){const P=pLoad(m);if(!P.pend||!P.pend.length||!mOpen(m))return;const Q=await pQuote([...new Set(P.pend.map(o=>o.code))],m);let ch=0;
+ P.pend=P.pend.filter(o=>{const q=Q[o.code];if(!(q&&q[0]))return true;const r=pFill(P,m,o,q);if(r)P.log.unshift({t:Date.now(),code:o.code,name:o.name,side:"취소",n:o.n,px:0,fee:0,tax:0,why:r});ch=1;return false});
+ if(ch&&pSave(P,m))toast("예약 주문이 체결되었습니다 (모의)")}
+setInterval(()=>{pPend("KR");pPend("US")},15000);
 function posRow(c,h,px,m="KR"){const buy=h.avg*h.n,ev=px*h.n,pl=ev-buy,r=(px/h.avg-1)*100,cl=r>0?"up":r<0?"dn":"";
  return `<div class="pr" onclick="go('stock',{code:'${esc(c)}',m:'${m}'})"><div class="pr1"><b>${esc(h.name)}</b><b class="${cl}">${pl>0?"+":pl<0?"-":""}${amt$(Math.abs(pl),m)} <small>(${r>0?"+":""}${r.toFixed(2)}%)</small></b></div>
  <div class="pr2"><span>매수</span><span>${amt$(h.avg,m)} × ${fmt(h.n)}주</span><span>${amt$(buy,m)}</span></div>
  <div class="pr2"><span>현재</span><span>${amt$(px,m)} × ${fmt(h.n)}주</span><span class="${cl}">${amt$(ev,m)}</span></div></div>`}
 function sumRow(buy,ev,cash,m="KR"){const pl=ev-buy,r=buy?pl/buy*100:0,cl=pl>0?"up":pl<0?"dn":"",f=v=>m=="US"?fmt(v,2):fmt(Math.round(v));
  return `<div class="psum"><div><span>매수금액</span><b>${f(buy)}</b></div><div><span>평가금액</span><b>${f(ev)}</b></div><div><span>평가손익</span><b class="${cl}">${pl>0?"+":""}${f(pl)}<small>${r>0?"+":""}${r.toFixed(2)}%</small></b></div><div><span>현금</span><b>${f(cash)}</b></div></div>`}
-async function viewPaper(){const m=PMKT,c=PM[m],P=pLoad(m);let RA=null;try{RA=await radarAcct(m)}catch(e){}const cs=[...new Set([...Object.keys(P.pos),...(RA?Object.keys(RA.A.pos):[])])];
+async function viewPaper(){const m=PMKT,c=PM[m];await pPend(m);const P=pLoad(m);let RL=null;try{RL=await J0(`data/${m}/radar.json`)}catch(e){}const cs=Object.keys(P.pos);
  const f=v=>m=="US"?fmt(v,2):fmt(Math.round(v)),U=m=="US"?"$":"원";
  const draw=Q=>{let ev=0,cost=0;const rows=Object.keys(P.pos).map(k=>{const h=P.pos[k],q=Q[k],px=q&&q[0]||h.avg;ev+=px*h.n;cost+=h.avg*h.n;return posRow(k,h,px,m)}).join("");
   const tot=P.cash+ev,tr=(tot/c.seed-1)*100,real=P.log.reduce((a,x)=>a+(x.pnl||0),0);
@@ -495,11 +503,18 @@ async function viewPaper(){const m=PMKT,c=PM[m],P=pLoad(m);let RA=null;try{RA=aw
    <div class="card"><h3 style="display:flex;justify-content:space-between;align-items:center">${m=="US"?"미국":"국내"} 모의투자 계좌 <span class="ptag">가상 ${c.seedTxt}</span></h3>
    <div class="big ${tr>0?"up":tr<0?"dn":""}">${amt$(tot,m)}</div><div style="font-size:15px;font-weight:700" class="${tr>0?"up":tr<0?"dn":""}">${tr>0?"+":""}${tr.toFixed(2)}% <span class="mu" style="font-weight:400;font-size:12px">${esc(P.start)} 시작 · ${mOpen(m)?'<span class="rtdot"></span>실시간':"마지막 가격"}</span></div>
    <div class="grid3" style="margin-top:12px"><div class="cell"><span>현금 (${U})</span><b>${f(P.cash)}</b></div><div class="cell"><span>평가손익</span><b class="${ev-cost>0?"up":ev-cost<0?"dn":""}">${f(ev-cost)}</b></div><div class="cell"><span>실현손익</span><b class="${real>0?"up":real<0?"dn":""}">${f(real)}</b></div></div></div>
-   ${RA?(()=>{const A=RA.A;let rv=0,rb=0;const rl=Object.entries(A.pos).map(([k,h])=>{const q=Q[k],px=q&&q[0]||(RA.by[k]?RA.by[k][4]:h.avg);rv+=px*h.n;rb+=h.avg*h.n;return posRow(k,h,px,m)}).join("");
-    const rt=((A.cash+rv)/c.seed-1)*100,kr=A.k0&&RA.kospi?(RA.kospi/A.k0-1)*100:null;
-    return `<div class="card"><h3 style="display:flex;justify-content:space-between;align-items:center">수익률 비교 <span class="mu" style="font-weight:400;font-size:12px">${esc(A.start)}부터</span></h3><div class="vs"><div><span>내 계좌</span><b class="${tr>0?"up":tr<0?"dn":""}">${tr>0?"+":""}${tr.toFixed(2)}%</b></div><div><span>레이더 따라하기</span><b class="${rt>0?"up":rt<0?"dn":""}">${rt>0?"+":""}${rt.toFixed(2)}%</b></div><div><span>${c.bench}</span><b class="${kr>0?"up":kr<0?"dn":""}">${kr==null?"-":(kr>0?"+":"")+kr.toFixed(2)+"%"}</b></div></div>
-     <div class="note" style="padding:10px 0 4px">'레이더 따라하기'는 ${m=="US"?"S&amp;P500 ":""}매수후보 점수 상위 5종목을 같은 금액으로 사고, 자료가 갱신될 때마다 후보에서 빠진 종목은 팔고 새 후보를 사는 가상 계좌입니다(마지막 갱신 ${esc(A.last||"-")}). 신호를 그대로 따랐을 때 실제로 이기는지 확인하는 용도입니다.</div>${sumRow(rb,rv,A.cash,m)}${rl||'<div class="empty">지금은 매수후보가 없어 현금으로 기다리는 중입니다</div>'}</div>`})():""}
-   <div class="card"><h3>내 보유 종목 ${Object.keys(P.pos).length}</h3>${rows?sumRow(cost,ev,P.cash,m):""}${rows||`<div class="empty">아직 보유 종목이 없습니다.<br>${m=="US"?"미장":"국내"} 종목 화면 아래 <b>모의 매매</b>에서 사 보세요.</div>`}</div>
+   ${RL&&RL.curve&&RL.curve.length?(()=>{const L=RL,last=L.curve[L.curve.length-1],rt=(last.eq/L.seed-1)*100,bl=[...L.curve].reverse().find(x=>x.bench),kr=L.b0&&bl?(bl.bench/L.b0-1)*100:null;
+    const eqs=L.curve.map(x=>x.eq/L.seed*100),bs=L.curve.filter(x=>x.bench).map(x=>x.bench/L.b0*100),all=[...eqs,...bs],mn=Math.min(...all),mx=Math.max(...all),W=300,Hh=70,pl=a=>a.map((v,i)=>(i/(a.length-1||1)*W).toFixed(1)+","+(Hh-4-(v-mn)/(mx-mn||1)*(Hh-8)).toFixed(1)).join(" ");
+    let rb=0,rv=0;const rl=L.hold.map(h=>{rb+=h.avg*h.n;rv+=(h.last||h.avg)*h.n;return posRow(h.code,{n:h.n,avg:h.avg,name:h.name+(h.frozen?" ⚠ 가격 미확인":"")},h.last||h.avg,m)}).join("");
+    return `<div class="card"><h3 style="display:flex;justify-content:space-between;align-items:center">레이더 따라하기 · 공식 원장 <span class="mu" style="font-weight:400;font-size:12px">${esc(L.start)} ~ ${esc(last.d)} 종가</span></h3>
+     <div class="vs"><div><span>내 계좌</span><b class="${tr>0?"up":tr<0?"dn":""}">${tr>0?"+":""}${tr.toFixed(2)}%</b></div><div><span>레이더 원장</span><b class="${rt>0?"up":rt<0?"dn":""}">${rt>0?"+":""}${rt.toFixed(2)}%</b></div><div><span>${esc(L.bname)}</span><b class="${kr>0?"up":kr<0?"dn":""}">${kr==null?"-":(kr>0?"+":"")+kr.toFixed(2)+"%"}</b></div></div>
+     <svg viewBox="0 0 ${W} ${Hh}" style="width:100%;height:70px;margin-top:10px" aria-label="원장 자산 추이"><polyline points="${pl(bs)}" fill="none" stroke="var(--mute)" stroke-width="1.4" stroke-dasharray="3 3"/><polyline points="${pl(eqs)}" fill="none" stroke="var(--acc)" stroke-width="2"/></svg>
+     <div class="rngl"><span>━ 레이더 원장</span><span>┅ ${esc(L.bname)}</span></div>
+     <div class="snote" style="margin-top:10px"><b>원장 규칙 (모든 이용자 동일 · 앱 접속과 무관)</b><span>매 거래일 장마감 분석의 매수후보 점수 상위 5종목을 <b>다음 거래일 시가</b>에 체결합니다(미리 기록된 신호만 사용). 체결일마다 총자산을 5등분해 보유 종목까지 다시 맞추고, 수수료·${m=="KR"?"매도세 0.2%·":""}슬리피지 0.1%를 뺍니다. 시가가 없는 종목은 매매하지 않고 '가격 미확인'으로 둡니다. PC 장마감 분석이 매일 새로 계산합니다.</span></div>
+     ${L.pending&&L.pending.codes.length?`<div class="snote"><b>다음 거래일 시가 체결 예정 (${esc(L.pending.sig)} 신호)</b><span>${L.pending.codes.map(x=>`${esc(x[1])} +${Math.round(x[2])}`).join(" · ")}</span></div>`:""}
+     ${sumRow(rb,rv,L.cash,m)}${rl||'<div class="empty">지금은 매수후보가 없어 현금으로 기다리는 중입니다</div>'}
+     ${L.trades.length?`<details style="margin-top:8px"><summary class="mu" style="cursor:pointer;font-size:13px">원장 거래 내역 ${L.trades.length}건</summary>${L.trades.slice(-30).reverse().map(x=>`<div class="pl"><div><b><span class="tag ${x.side=="매수"?"p":"m"}">${x.side}</span>${esc(x.name)}</b><small>${esc(x.d)} 시가 · ${esc(x.sig)} 신호 · ${fmt(x.n)}주 × ${amt$(x.px,m)}</small></div><div style="align-items:flex-end">${x.pnl!=null?`<b class="${x.pnl>0?"up":x.pnl<0?"dn":""}">${x.pnl>0?"+":x.pnl<0?"-":""}${amt$(Math.abs(x.pnl),m)}</b>`:""}<small>비용 ${amt$(x.cost,m)}</small></div></div>`).join("")}</details>`:""}</div>`})():""}
+   <div class="card"><h3>내 보유 종목 ${Object.keys(P.pos).length}</h3>${(P.pend||[]).length?`<div class="snote"><b>예약 주문 ${P.pend.length}건 · 다음 장 시작 뒤 첫 실시간 가격으로 체결</b><span>${P.pend.map(o=>`${esc(o.name)} ${o.side>0?"매수":"매도"} ${fmt(o.n)}주`).join(" · ")}</span></div>`:""}${rows?sumRow(cost,ev,P.cash,m):""}${rows||`<div class="empty">아직 보유 종목이 없습니다.<br>${m=="US"?"미장":"국내"} 종목 화면 아래 <b>모의 매매</b>에서 사 보세요.</div>`}</div>
    ${P.log.length?`<div class="card"><h3>거래 내역</h3>${P.log.slice(0,40).map(x=>`<div class="pl" onclick="go('stock',{code:'${esc(x.code)}',m:'${m}'})"><div><b><span class="tag ${x.side=="매수"?"p":"m"}">${x.side}</span>${esc(x.name)}</b><small>${new Date(x.t+9*3600e3).toISOString().slice(5,16).replace("T"," ")} · ${fmt(x.n)}주 × ${amt$(x.px,m)}</small></div><div style="align-items:flex-end">${x.pnl!=null?`<b class="${x.pnl>0?"up":x.pnl<0?"dn":""}">${x.pnl>0?"+":x.pnl<0?"-":""}${amt$(Math.abs(x.pnl),m)}</b>`:""}<small>비용 ${amt$(x.fee+x.tax,m)}</small></div></div>`).join("")}</div>`:""}
    <div class="note">실제 돈·실제 주문과 연결되지 않은 연습 계좌입니다. 기록은 이 기기·이 브라우저에만 저장되어 다른 기기에서는 보이지 않습니다. 실제 체결가는 호가·슬리피지 때문에 다를 수 있습니다.${m=="US"?" 미국 계좌는 달러 기준이며 환율 변동은 반영하지 않습니다.":""} <a href="#" onclick="pReset('${m}');return false" style="color:var(--mute)">계좌 초기화</a></div>${DISC}`};
  draw({});if(cs.length){draw(await pQuote(cs,m));TIMER=setInterval(async()=>{if(VIEW=="paper"&&mOpen(m))draw(await pQuote(cs,m))},10000)}}
@@ -534,6 +549,7 @@ function bindZoom(){const svg=$("#chart svg");if(!svg)return;const n=Number(svg.
     else if(pts.size==1&&startX!=null){const dx=e.clientX-startX,bars=Math.round(dx/w*n);if(bars!==0&&ZO!==Math.max(0,startO+bars)){ZO=Math.max(0,startO+bars);drawChart()}}});
   const up=e=>{pts.delete(e.pointerId);if(pts.size<2)startD=null;if(pts.size==0)startX=null};svg.addEventListener("pointerup",up);svg.addEventListener("pointercancel",up)}
 const LVC={"적극 매수":"var(--up)","매수":"#FF8A95","매수대기":"#FFC2C8","관망":"var(--line)","매도":"#8EBBFF","적극 매도":"var(--dn)"};
+function tEnd(t,tf){const m=String(t).match(/(\d{1,2}):?(\d{2})$/);if(!m)return t;const v=+m[1]*60+ +m[2]+tf;return String(Math.floor(v/60)).padStart(2,"0")+":"+String(v%60).padStart(2,"0")}
 const LVN={"적극 매수":"강한 상승조건(시험)","매수":"상승조건(시험)","매수대기":"상승 대기","관망":"관망","매도":"하락조건(시험)","적극 매도":"강한 하락조건(시험)"};const lvn=l=>LVN[l]||l;
 function drawMinute(){const box=$("#chart"),L=LIVE.tf[TF]||[];if(L.length<2){box.innerHTML='<div class="empty">분봉 자료가 없습니다</div>';return}
   const [a0,a1,N]=win(L.length,120),B=L.slice(a0,a1),W=360,H=200,VH=40,P=6,top=8;
@@ -542,7 +558,7 @@ function drawMinute(){const box=$("#chart"),L=LIVE.tf[TF]||[];if(L.length<2){box
   B.forEach((b,i)=>{const x=i*bw+bw/2,c=b[4]>=b[1]?"var(--up)":"var(--dn)";s+=`<line x1="${x}" x2="${x}" y1="${y(b[2])}" y2="${y(b[3])}" stroke="${c}"/><rect x="${x-bw*.36}" y="${Math.min(y(b[1]),y(b[4]))}" width="${bw*.72}" height="${Math.max(1,Math.abs(y(b[1])-y(b[4])))}" fill="${c}"/><rect x="${x-bw*.36}" y="${H+VH-b[5]/vmax*(VH-4)}" width="${bw*.72}" height="${b[5]/vmax*(VH-4)}" fill="${c}" opacity=".45"/>`;
    if(b[7]){const yy=Math.min(y(b[3])+4,H-14);s+=`<g><title>${esc(b[0]+" 상승조건(시험): "+b[7])}</title><path d="M${x} ${yy} l-7 12 h14 z" fill="var(--buy)" stroke="var(--card)" stroke-width="1.5"/></g>`}
    if(b[8]){const yy=Math.max(y(b[2])-4,top+14);s+=`<g><title>${esc(b[0]+" 하락조건(시험): "+b[8])}</title><path d="M${x} ${yy} l-7 -12 h14 z" fill="var(--sell)" stroke="var(--card)" stroke-width="1.5"/></g>`}
-   if(Number(TF)>=10&&!b[7]&&!b[8]){const lv=judgeAt(b[0],Number(TF));if(lv&&/매수$/.test(lv)&&lv!="매수대기")s+=`<circle cx="${x}" cy="${y(b[3])+8}" r="4" fill="var(--buy)"><title>${esc(b[0]+" 장중 판정: "+lvn(lv))}</title></circle>`;
+   if(Number(TF)>=10&&!b[7]&&!b[8]){const lv=judgeAt(b[0],Number(TF));if(lv&&/매수$/.test(lv)&&lv!="매수대기")s+=`<circle cx="${x}" cy="${y(b[3])+8}" r="4" fill="var(--buy)"><title>${esc(b[0]+" 시작 봉 → "+tEnd(b[0],Number(TF))+" 봉 마감 때 판정: "+lvn(lv))}</title></circle>`;
     else if(lv&&/매도/.test(lv))s+=`<circle cx="${x}" cy="${y(b[2])-8}" r="4" fill="var(--sell)"><title>${esc(b[0]+" 장중 판정: "+lv)}</title></circle>`}});
   s+=`<polyline points="${B.map((b,i)=>`${(i*bw+bw/2).toFixed(1)},${y(b[6]).toFixed(1)}`).join(" ")}" fill="none" stroke="var(--ma20)" stroke-width="1.4" stroke-dasharray="3 2"/>`;
   s+=`<text x="${W}" y="${top+8}" font-size="10" text-anchor="end">${fmt(hi)}</text><text x="${W}" y="${H-P}" font-size="10" text-anchor="end">${fmt(lo)}</text><text x="0" y="${H+VH+14}" font-size="10">${B[0][0]}</text><text x="${W}" y="${H+VH+14}" font-size="10" text-anchor="end">${B[N-1][0]}</text></svg>`;
