@@ -52,7 +52,36 @@ for s, n in SY.items():
         if d: D[s] = {"n": n, "d": d, "m": m}; continue
     d = bars(s, "2y", "1d", "%Y-%m-%d"); m = bars(s, "1d", "5m", "%H:%M"); time.sleep(0.3)
     if d: D[s] = {"n": n, "d": d, "m": m}
+# 야선 추정 보정(11-14 회장님 지적): '나스닥 선물 1:1' 대신 지난 2년 실제 관계로 계수를 구한다.
+# 국내 장 마감(15:30) 뒤 ~ 다음날 09:00 사이 나스닥 선물 변화 → 다음날 코스피200 시가 갭(전날 종가 대비)
+night = None
+try:
+    j = get("https://query1.finance.yahoo.com/v8/finance/chart/NQ%3DF?range=730d&interval=60m")
+    r = j["chart"]["result"][0]; ts = r["timestamp"]; cl = r["indicators"]["quote"][0]["close"]
+    nq = [(t, c) for t, c in zip(ts, cl) if c]
+    import bisect
+    tt = [t for t, _ in nq]
+    def at(t):  # t(UTC 초) 이전 마지막 값
+        i = bisect.bisect_right(tt, t) - 1
+        return nq[i][1] if i >= 0 else None
+    K = D.get("^KS200", {}).get("d") or []
+    xs, ys = [], []
+    for a_, b_ in zip(K[:-1], K[1:]):
+        d0 = datetime.datetime.strptime(a_[0], "%Y-%m-%d"); d1 = datetime.datetime.strptime(b_[0], "%Y-%m-%d")
+        t0 = int((d0 + datetime.timedelta(hours=6, minutes=30)).replace(tzinfo=datetime.timezone.utc).timestamp())
+        t1 = int(d1.replace(tzinfo=datetime.timezone.utc).timestamp())
+        p0, p1 = at(t0), at(t1)
+        if not p0 or not p1 or t0 < tt[0]: continue
+        xs.append(p1 / p0 - 1); ys.append(b_[1] / a_[4] - 1)
+    if len(xs) > 100:
+        sxx = sum(x * x for x in xs); beta = sum(x * y for x, y in zip(xs, ys)) / sxx
+        pred = [beta * x for x in xs]; err = [y - q for y, q in zip(ys, pred)]
+        my = sum(ys) / len(ys); ss = sum((y - my) ** 2 for y in ys); r2 = 1 - sum(e * e for e in err) / ss if ss else 0
+        hit = sum((q > 0) == (y > 0) for q, y in zip(pred, ys) if abs(q) > 0.001) / max(1, sum(abs(q) > 0.001 for q in pred))
+        night = {"beta": round(beta, 3), "r2": round(r2, 3), "mae": round(sum(abs(e) for e in err) / len(err) * 100, 3), "hit": round(hit * 100, 1), "n": len(xs), "from": K[0][0]}
+    print("야선 보정", night)
+except Exception as e: print("야선 보정 실패", e)
 now = datetime.datetime.utcnow() + datetime.timedelta(hours=9)
-json.dump({"made": now.strftime("%Y-%m-%d %H:%M"), "src": "Yahoo Finance(지연 시세)", "s": D}, open("static/idx_hist.json", "w"), ensure_ascii=False, separators=(",", ":"))
+json.dump({"made": now.strftime("%Y-%m-%d %H:%M"), "src": "Yahoo Finance(지연 시세)", "s": D, "night": night}, open("static/idx_hist.json", "w"), ensure_ascii=False, separators=(",", ":"))
 print("지수", len(D), {k: (len(v["d"]), len(v["m"])) for k, v in D.items()})
 if len(D) < 5: raise SystemExit("지수 자료가 너무 적음")

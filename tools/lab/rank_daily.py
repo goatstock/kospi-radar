@@ -58,6 +58,9 @@ F = F.join(df[["date"]]).merge(kf, left_on="date", right_index=True, how="left")
 F["rs20"] = F["r20"] - F["k_r20"]; F["rs60"] = F["r60"] - F["k_r60"]
 X = F.replace([np.inf, -np.inf], np.nan)
 y = g["close"].shift(-5) / g["open"].shift(-1) - 1 - 0.0025
+big = (ret.abs() > 0.35).astype(float)  # 액면병합·분할 등 가격 단절 구간은 학습에서 제외(11-14)
+fw = big.groupby(gc).transform(lambda s: s[::-1].rolling(7, min_periods=1).max()[::-1])
+y = y.where(fw == 0)
 df["yx"] = y - y.groupby(df["date"]).transform("mean")
 liq = (df["close"] * df["volume"] > 5e8)
 tr = df["yx"].notna() & X["r60"].notna() & liq
