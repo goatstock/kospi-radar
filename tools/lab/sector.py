@@ -16,7 +16,14 @@ for tr in re.findall(r"<tr[^>]*>(.*?)</tr>", t, re.S):
     if len(nums) < 5: continue
     pct = float(nums[0]); tot, up, fl, dn = (int(float(x)) for x in nums[1:5])
     rows.append([m.group(1), html.unescape(m.group(2)).strip(), pct, up, fl, dn, tot])
-if len(rows) < 30: raise SystemExit(f"업종 행이 너무 적음: {len(rows)}")
+if len(rows) < 30:
+    print("데스크톱 페이지 파싱 실패", len(raw), repr(t[:300]), "detail링크수", t.count("sise_group_detail"))
+    i = t.find("sise_group_detail"); print("주변:", repr(t[max(0, i-600):i+900]))
+    for u in ["https://m.stock.naver.com/api/stocks/industry?page=1&pageSize=100", "https://m.stock.naver.com/api/stocks/industry/list?page=1&pageSize=100"]:
+        try:
+            r = urllib.request.urlopen(urllib.request.Request(u, headers={"User-Agent": "Mozilla/5.0"}), timeout=20).read().decode("utf-8", "ignore"); print("모바일", u, repr(r[:1500]))
+        except Exception as e: print("모바일 실패", u, e)
+    raise SystemExit(f"업종 행이 너무 적음: {len(rows)}")
 now = datetime.datetime.utcnow() + datetime.timedelta(hours=9)
 json.dump({"date": now.strftime("%Y-%m-%d"), "made": now.strftime("%Y-%m-%d %H:%M"), "src": "네이버 업종 시세", "rows": rows}, open("static/sector_kr.json", "w"), ensure_ascii=False, separators=(",", ":"))
 print("업종", len(rows)); print("JSON>" + open("static/sector_kr.json").read())
