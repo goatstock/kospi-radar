@@ -16,4 +16,7 @@ for i in range(14):
 mc.append('<polyline class="drw" points="0,58 15,54 30,56 45,51 60,53 75,49 90,51 105,46 120,48" fill="none" stroke="#A23CFF" stroke-width="1.5"/></svg>')
 s=s.replace('__MINICHART__',''.join(mc))
 s=s.replace('__SHOT__',open(shot).read().strip())
+import os
+fb=os.path.join(os.path.dirname(shot),'featbg.b64')
+s=s.replace('__FXBG__',open(fb).read().strip())
 open('login.html','w').write(s);print('ok',len(s))
