@@ -1,16 +1,21 @@
-# 자료원 시험 2: 야간선물 단서 찾기('야간'·night 주변 글자 출력)
-import urllib.request, re
+# 자료원 시험 3: 실시간 시세 지연 확인(야후 지연 분, 네이버 해외 지수·선물 실시간 주소)
+import urllib.request, json, time
 H = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130", "Referer": "https://m.stock.naver.com/"}
-U = ["https://m.stock.naver.com/api/index/FUT/integration", "https://finance.naver.com/sise/sise_index.naver?code=FUT",
-     "https://m.stock.naver.com/domestic/index/FUT/total", "https://finance.naver.com/sise/", "https://m.stock.naver.com/api/home/majors",
-     "https://m.stock.naver.com/api/index/majors", "https://m.stock.naver.com/front-api/home/domestic/index?category=futures",
-     "https://www.krx.co.kr/main/main.jsp", "https://open.krx.co.kr/contents/MKD/99/MKD99000001.jsp"]
-for u in U:
+def get(u):
+    try: return urllib.request.urlopen(urllib.request.Request(u, headers=H), timeout=15).read().decode("utf-8", "ignore")
+    except Exception as e: return "ERR " + str(e)
+now = time.time()
+for s in ["NQ=F", "ES=F", "YM=F", "^GSPC", "^IXIC", "^DJI", "^SOX", "^NDX", "KRW=X", "CL=F"]:
+    t = get(f"https://query1.finance.yahoo.com/v8/finance/chart/{urllib.request.quote(s)}?range=1d&interval=1m")
     try:
-        raw = urllib.request.urlopen(urllib.request.Request(u, headers=H), timeout=15).read()
-        try: t = raw.decode("utf-8")
-        except UnicodeDecodeError: t = raw.decode("euc-kr", "ignore")
-        hits = [m.start() for m in re.finditer(r"야간|[Nn]ight|NIGHT|NFUT|ngt", t)][:6]
-        print("OK ", u, len(t), "hits", len(hits))
-        for h in hits: print("    ...", t[max(0, h - 150):h + 250].replace("\n", " "))
-    except Exception as e: print("ERR", u, e)
+        m = json.loads(t)["chart"]["result"][0]["meta"]
+        print("YH", s, m.get("regularMarketPrice"), "prev", m.get("chartPreviousClose"), m.get("previousClose"), "delay", m.get("exchangeDataDelayedBy"), "age(s)", int(now - (m.get("regularMarketTime") or 0)), m.get("exchangeName"))
+    except Exception as e: print("YH", s, t[:150])
+for u in ["https://polling.finance.naver.com/api/realtime/worldstock/index/.IXIC", "https://polling.finance.naver.com/api/realtime/worldstock/index/.INX",
+          "https://polling.finance.naver.com/api/realtime/worldstock/index/.SOX", "https://polling.finance.naver.com/api/realtime/worldstock/index/.DJI",
+          "https://m.stock.naver.com/api/index/.IXIC/basic", "https://api.stock.naver.com/index/.IXIC/basic",
+          "https://polling.finance.naver.com/api/realtime/worldstock/futures/NQcv1", "https://api.stock.naver.com/futures/NQcv1/basic",
+          "https://m.stock.naver.com/api/futures/NQcv1/basic", "https://api.stock.naver.com/futures/nationType/USA",
+          "https://m.stock.naver.com/front-api/marketIndex/productDetail?category=futures&reutersCode=NQcv1",
+          "https://api.stock.naver.com/marketindex/futures/NQcv1", "https://m.stock.naver.com/front-api/futures/NQcv1/basic"]:
+    print("NV", u, "\n   ", get(u)[:500].replace("\n", " "))
