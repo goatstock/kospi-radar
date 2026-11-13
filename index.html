@@ -276,7 +276,16 @@ body:not(.pc) .hero .hmini b,body[data-mt=dark] .hero .hmini b{color:#fff}
 @keyframes hshn{from{background-position:120% 0}to{background-position:-120% 0}}
 .pchero.hv-kr .htx{position:relative;z-index:2}
 .pchero.hv-kr::after{display:none}
-@media (prefers-reduced-motion: reduce){.pchero,.pchero *{animation:none!important}.hart .hline{stroke-dashoffset:0}.hart .hdotp{opacity:1}}
+@media (min-width:1200px){.pc .wrap.srl{max-width:1690px;padding-left:268px;position:relative}
+.pc .secrail{position:absolute;left:28px;top:18px;bottom:40px;width:226px}
+.pc .secrail .srin{position:sticky;top:76px;padding:14px 12px;max-height:calc(100vh - 96px);overflow:auto;scrollbar-width:thin}}
+@media (max-width:1199.98px){.secrail{display:none}}
+.secrail h3{margin:0 0 2px;font-size:16px}.secrail .srsub{font-size:11px;color:var(--sub);line-height:1.45}
+.srbar{display:flex;align-items:center;gap:6px;margin:8px 0;font-size:11.5px;font-weight:700}.srbar .up{color:#E8344D}.srbar .dn{color:#2B6CF0}.srbar i{flex:1;height:6px;border-radius:9px;background:rgba(43,108,240,.5);overflow:hidden}.srbar em{display:block;height:100%;background:#E8344D}
+.scg{display:grid;grid-template-columns:1fr 1fr;gap:4px}.scb{border-radius:8px;padding:7px 4px;min-height:46px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--ink);animation:scin .5s both}.scb.w2{grid-column:span 2;min-height:54px}.scb b{font-size:12.5px;line-height:1.2;word-break:keep-all}.scb.w2 b{font-size:14px}.scb span{font-size:11.5px;opacity:.9;margin-top:2px}
+#tfseg .nolv{opacity:.55}
+.scb:nth-child(3n){animation-delay:.08s}.scb:nth-child(3n+1){animation-delay:.16s}@keyframes scin{from{opacity:0;transform:scale(.92)}}
+@media (prefers-reduced-motion: reduce){.pchero,.pchero *,.scb{animation:none!important}.hart .hline{stroke-dashoffset:0}.hart .hdotp{opacity:1}}
 .airow{display:grid;grid-template-columns:42px minmax(0,1fr) 70px 110px;gap:8px;align-items:center;width:100%;border:0;border-top:1px solid var(--line);background:none;padding:8px 2px;font:inherit;font-size:14px;color:var(--ink);text-align:left;cursor:pointer}
 .airow:hover{background:var(--soft)}.airow span:nth-child(3),.airow span:nth-child(4){text-align:right;font-family:Inter,sans-serif;font-weight:700}
 .airh{cursor:default;font-size:12px;color:var(--mute);border-top:0}.airh:hover{background:none}
@@ -806,6 +815,7 @@ function drawMinute(){const box=$("#chart"),L=LIVE.tf[TF]||[];if(L.length<2){box
     <div class="lg" style="margin-top:6px">${Object.entries(LVC).map(([k,c])=>`<span><i style="background:${c};height:8px"></i>${lvn(k)}</span>`).join("")}</div>`}
   document.querySelectorAll("#tfseg button").forEach(b=>b.classList.toggle("on",b.dataset.tf==TF))}
 function drawChart(){const d=CUR;if(!d)return;const box=$("#chart");if(!box)return;if(LIVE&&!["D","W","M"].includes(TF))return drawMinute();
+  if(!LIVE&&!["D","W","M"].includes(TF)){box.innerHTML=`<div class="empty" style="padding:28px 12px;line-height:1.6"><b>이 종목은 분봉 자료가 아직 없습니다</b><br>분봉(1~30분)과 장중 ▲▼ 표시는 지금 장중 실시간 감시 종목(약 60개 · 삼성전자·SK하이닉스 등)만 모읍니다.<br>감시 종목을 넓히는 작업을 진행 중입니다.<br><button class="btn" style="margin-top:10px" onclick="TF='D';drawChart()">일봉으로 보기</button></div>`;document.querySelectorAll("#tfseg button").forEach(b=>b.classList.toggle("on",b.dataset.tf==TF));return}
   const all=agg(d.bars,TF);if(all.length<2){box.innerHTML='<div class="empty">차트 자료가 부족합니다</div>';return}
   const M5=ma(all,5),M20=ma(all,20),M60=ma(all,60);
   const [b0,b1,N]=win(all.length,TF=="D"?90:TF=="W"?60:40),B=all.slice(b0,b1),off=b0;
@@ -823,14 +833,15 @@ function drawChart(){const d=CUR;if(!d)return;const box=$("#chart");if(!box)retu
   if(BB){[BB.U,BB.D].forEach(L=>{const pts=L.slice(off,off+N).map((v,i)=>v==null?null:`${(i*bw+bw/2).toFixed(1)},${y(v).toFixed(1)}`).filter(Boolean).join(" ");if(pts)s+=`<polyline class="bb" points="${pts}" fill="none" stroke="#9B8CFF" stroke-width="1" stroke-dasharray="4 2"/>`})}
   // MA5·MA20 crossover markers
   for(let i=1;i<N;i++){const j=i+off,a0=M5[j-1],b0=M20[j-1],a1=M5[j],b1=M20[j];if([a0,b0,a1,b1].some(v=>v==null))continue;const x=i*bw+bw/2;
-   if(a0<=b0&&a1>b1)s+=`<path d="M${x} ${y(B[i][3])+4} l-6 11 h12 z" fill="var(--buy)" stroke="var(--card)" stroke-width="1.5"><title>${esc(B[i][0])} 골든크로스(5일선이 20일선 위로)</title></path>`;
-   if(a0>=b0&&a1<b1)s+=`<path d="M${x} ${y(B[i][2])-4} l-6 -11 h12 z" fill="var(--sell)" stroke="var(--card)" stroke-width="1.5"><title>${esc(B[i][0])} 데드크로스(5일선이 20일선 아래로)</title></path>`}
+   if(a0<=b0&&a1>b1)s+=`<path d="M${x} ${y(B[i][3])+4} l-6 11 h12 z" fill="var(--buy)" stroke="var(--card)" stroke-width="1.5"><title>${esc(B[i][0])} 골든크로스(5일선이 20일선 위로)</title></path><text x="${x}" y="${Math.min(y(B[i][3])+25,H-2)}" font-size="8.5" text-anchor="middle" style="fill:var(--buy);font-weight:800">상승</text>`;
+   if(a0>=b0&&a1<b1)s+=`<path d="M${x} ${y(B[i][2])-4} l-6 -11 h12 z" fill="var(--sell)" stroke="var(--card)" stroke-width="1.5"><title>${esc(B[i][0])} 데드크로스(5일선이 20일선 아래로)</title></path><text x="${x}" y="${Math.max(y(B[i][2])-18,top+8)}" font-size="8.5" text-anchor="middle" style="fill:var(--sell);font-weight:800">하락</text>`}
+  {const sg=d.signal||{},ac=String(sg.action||"");if(ZO==0&&TF=="D"&&sg.date==B[N-1][0]&&/강세|약세/.test(ac)){const x=(N-1)*bw+bw/2,st=/강세/.test(ac),yy=st?Math.min(y(B[N-1][3])+6,H-16):Math.max(y(B[N-1][2])-22,top);s+=`<g><title>${esc(sg.date+" 오늘 판정: "+ac+" (시험 · 매매 근거 아님)")}</title><rect x="${x-30}" y="${yy}" width="30" height="14" rx="7" fill="var(${st?"--buy":"--sell"})"/><text x="${x-15}" y="${yy+10}" font-size="8.5" text-anchor="middle" fill="#fff" style="font-weight:800">${st?"강세":"약세"}</text></g>`}}
   chartLines(d).forEach(([v,c,t])=>{if(v>=lo&&v<=hi){const yy=y(v).toFixed(1);s+=`<line x1="0" x2="${W}" y1="${yy}" y2="${yy}" stroke="${c}" stroke-width="1" stroke-dasharray="4 3"/><text x="2" y="${yy-2}" font-size="9.5" style="fill:${c};font-weight:700">${t} ${fmt(v,d.m=="US"?2:0)}</text>`}});
   window.__CB=B;window.__CBW=bw;
   s+=`<text x="${W}" y="${top+8}" font-size="10" text-anchor="end">${fmt(hi,d.m=="US"?2:0)}</text><text x="${W}" y="${H-P}" font-size="10" text-anchor="end">${fmt(lo,d.m=="US"?2:0)}</text>`;
   if(ZO==0)s+=`<rect x="${(N-1)*bw}" y="${top}" width="${bw}" height="${H+VH-top}" fill="var(--acc)" opacity=".10"/>`;
   s+=`<text x="0" y="${H+VH+14}" font-size="10">${B[0][0]}</text><text x="${W}" y="${H+VH+14}" font-size="10" text-anchor="end" ${ZO==0?'style="fill:var(--acc);font-weight:700"':""}>${ZO==0&&B[N-1][0]==(d.signal||{}).date?"오늘 ":""}${B[N-1][0]}</text></svg>`;
-  box.innerHTML=s+`<div class="lg"><span><i style="background:var(--ma5)"></i>5이평</span><span><i style="background:var(--ma20)"></i>20이평</span><span><i style="background:var(--ma60)"></i>60이평</span><span><b style="color:var(--buy)">▲</b> 골든크로스(5>20)</span><span><b style="color:var(--sell)">▼</b> 데드크로스(5<20)</span></div><div class="indt">${[5,20,60].map(k=>`<button class="${maOn(k)?"on":""}" onclick="maT(${k})">${k}이평</button>`).join("")}<button class="${IND.bb?"on":""}" onclick="indT('bb')">볼린저밴드</button><button class="${IND.rsi?"on":""}" onclick="indT('rsi')">RSI</button><button onclick="chartPng()">🖼 그림 저장</button></div>${IND.rsi?rsiSvg(rsi(all),off,N,W):""}${rangeBtns()}`+zoomBar();bindZoom();
+  box.innerHTML=s+`<div class="lg"><span><i style="background:var(--ma5)"></i>5이평</span><span><i style="background:var(--ma20)"></i>20이평</span><span><i style="background:var(--ma60)"></i>60이평</span><span><b style="color:var(--buy)">▲ 상승</b> 골든크로스(5>20)</span><span><b style="color:var(--sell)">▼ 하락</b> 데드크로스(5<20)</span><span class="mu">표시는 참고용(시험) · 매매 근거 아님</span></div><div class="indt">${[5,20,60].map(k=>`<button class="${maOn(k)?"on":""}" onclick="maT(${k})">${k}이평</button>`).join("")}<button class="${IND.bb?"on":""}" onclick="indT('bb')">볼린저밴드</button><button class="${IND.rsi?"on":""}" onclick="indT('rsi')">RSI</button><button onclick="chartPng()">🖼 그림 저장</button></div>${IND.rsi?rsiSvg(rsi(all),off,N,W):""}${rangeBtns()}`+zoomBar();bindZoom();
   document.querySelectorAll("#tfseg button").forEach(b=>b.classList.toggle("on",b.dataset.tf==TF))}
 function flowChart(fl,asof){const L=fl.slice(-30);if(!L.length)return"";const W=isPC()?780:360,Hh=isPC()?80:60,bw=W/L.length;const ser=[["외국인",1],["기관",2],["개인",3]];
   const last=L[L.length-1][0],isToday=last==asof,lx=(L.length-1)*bw;
@@ -861,7 +872,7 @@ async function viewStock(a){
   ${recentChips(m,a.code)}
   ${usLink(a.code,UM,UG)}
   <div class="card" style="padding:12px 12px 10px;display:flex;flex-direction:column;gap:8px">
-   <div class="seg" id="tfseg">${["1","3","5","10","15","30"].map(t=>`<button data-tf="${t}" ${LIVE?"":"disabled"} onclick="TF='${t}';ZN=null;ZO=0;drawChart()">${t}분</button>`).join("")}${[["D","일"],["W","주"],["M","월"]].map(([k,l])=>`<button data-tf="${k}" onclick="TF='${k}';ZN=null;ZO=0;drawChart()">${l}</button>`).join("")}</div>
+   <div class="seg" id="tfseg">${["1","3","5","10","15","30"].map(t=>`<button data-tf="${t}" class="${LIVE?"":"nolv"}" onclick="TF='${t}';ZN=null;ZO=0;drawChart()">${t}분</button>`).join("")}${[["D","일"],["W","주"],["M","월"]].map(([k,l])=>`<button data-tf="${k}" onclick="TF='${k}';ZN=null;ZO=0;drawChart()">${l}</button>`).join("")}</div>
    ${LIVE?`<div style="display:flex;align-items:center;gap:8px;background:var(--soft);border-radius:10px;padding:8px 10px;font-size:13px;font-weight:600"><span style="flex:none;white-space:nowrap;background:var(--buy);color:#fff;border-radius:6px;padding:2px 7px;font-size:12px">▲ 상승</span><span style="flex:none;white-space:nowrap;background:var(--sell);color:#fff;border-radius:6px;padding:2px 7px;font-size:12px">▼ 하락</span><span style="min-width:0">일봉: 골든·데드크로스 / 분봉: 상승·하락조건(시험)</span></div><div class="vbad"><b>⚠ 분봉 신호 검증 중</b><span>지난 검증(11/4~11/10)에서 분봉 상승조건 신호 30분 뒤 오른 비율 38%, 목표보다 손절에 먼저 닿은 비율 69%였습니다. 비용을 빼면 평균 손실이라 지금은 참고로만 보세요. 새 공식을 시험하고 있습니다.</span></div>`:""}
    <div id="chart"></div><div id="barinfo" class="note" style="min-height:18px">봉을 누르면 그날 시가·고가·저가·종가가 나옵니다</div>${LIVE?`<div id="judge"></div>`:""}</div>
   <div class="warnbox"><b>분봉 상승·하락 조건 감지 (시험 신호 · 매매 근거 아님)</b><span>${LIVE?`${esc(LIVE.day)} 장중 1·3·5·10·15·30분봉과 5분마다의 6단계 판정(그 시점까지의 데이터만 사용)입니다. 장마감 뒤 갱신됩니다.`:"이 종목은 아직 분봉 자료가 없습니다. 분봉은 추세 강세·관심·추세 약세·거래대금 상위 약 60종목에 대해 매일 장마감 뒤 올라옵니다."}${rb?` 최근 사후 검증에서 장중 '매수' 판정은 30분 뒤 적중 ${Math.round(rb.new.hit)}%, 비용 뺀 평균 ${rb.new.net.toFixed(2)}%였습니다. 참고만 하세요.`:""}</span></div>
@@ -1286,13 +1297,13 @@ async function quickWire(m){const inp=document.getElementById("pqs");if(!inp)ret
   out.querySelectorAll("button[data-c]").forEach(b=>b.onclick=()=>{const r=rows.find(x=>x[0]==b.dataset.c);if(!r)return;out.innerHTML="";inp.value=r[1];document.getElementById("pqbox").innerHTML=paperBox(r[0],r[1],r[4],m);const p=document.getElementById("pq");if(p)p.focus()})}}
 const __pcL0=pcLayout;
 pcLayout=async function(v){const V=document.getElementById("view");
- if(v=="kr")await aiCard(V);if(v=="stock"&&CURARG&&(CURARG.m||"KR")=="KR")aiStock(V,CURARG.code);
+ V.classList.remove("srl");if(v=="kr")await aiCard(V);if(v=="stock"&&CURARG&&(CURARG.m||"KR")=="KR")aiStock(V,CURARG.code);
  if(v=="paper"&&!V.querySelector("#pquick")){const cards=[...V.querySelectorAll(":scope > .card")];const hold=cards.find(e=>/보유 종목/.test(h3t(e)));const at=hold||cards[0];if(at){at.insertAdjacentHTML("afterend",quickCard(PMKT));quickWire(PMKT)}}
  await __pcL0(v);if(!isPC())return;
  {const nr=V.querySelector("#nightrow"),ib=V.querySelector(".ixb");if(nr&&ib&&!ib.contains(nr)){nr.style.display="contents";ib.appendChild(nr)}}
  const side=V.querySelector(".pcSide"),qc=V.querySelector("#pquick");if(v=="paper"&&side&&qc)side.prepend(qc);
  if(HERO[v]&&!V.querySelector(".pchero")){V.insertAdjacentHTML("afterbegin",heroHTML(v));if(v=="kr")heroKpi()}
- if(v=="kr"||v=="us")pcPolish(V)};
+ if(v=="kr"||v=="us")pcPolish(V);if(v=="kr")secRail(V)};
 async function heroKpi(){const t=document.querySelector(".pchero .htx");if(!t)return;try{const [r,g]=await Promise.all([J("data/regime.json"),J("data/KR/global.json")]);const k=g.find(x=>x.symbol=="^KS11")||{},q=g.find(x=>x.symbol=="^KQ11")||{};
  const it=(a,b,c)=>`<div class="hk"><span>${a}</span><b>${b}</b>${c||""}</div>`;
  heroTicker(g);heroClock();t.insertAdjacentHTML("beforeend",`<div class="hkpi">${it("코스피",fmt(k.close,2),pct(k.change_pct))}${it("코스닥",fmt(q.close,2),pct(q.change_pct))}${it("시장 국면",esc(r.state||"-"),`<small>현금 ${r.cash??"-"}%</small>`)}${it("외국인 5일",(r.foreign5>0?"+":"")+fmt(Math.round(r.foreign5||0))+"억",`<small>시장 순매수</small>`)}</div>`);countUp(t)}catch(e){}}
@@ -1322,6 +1333,15 @@ async function pcPolish(V){
   const box=(t,b,c)=>`<div><span>${t}</span><b class="${c||""}">${b}</b></div>`;
   hero.insertAdjacentHTML("beforeend",`<div class="hmini">${box("20일선 이격",gap==null?"-":(gap>0?"+":"")+gap.toFixed(1)+"%",gap>0?"up":"dn")}${box("20일선",fmt(r.ma20,0))}${box("60일선",fmt(r.ma60,0))}${box("외국인 5일",(r.foreign5>0?"+":"")+fmt(Math.round(r.foreign5||0))+"억",r.foreign5>0?"up":"dn")}${box("20일선 위 종목",(r.breadth||0).toFixed(0)+"%")}${box("5일 · 20일",`${r.r5>0?"+":""}${(r.r5||0).toFixed(1)}% · ${r.r20>0?"+":""}${(r.r20||0).toFixed(1)}%`)}</div>`)}catch(e){}}
  V.querySelectorAll(".hm").forEach(h=>{if(h.querySelector(".hmleg"))return;const g=h.querySelector(".hmg");if(g)g.insertAdjacentHTML("afterend",`<div class="hmleg"><span>-5% 이하</span><i></i><span>+5% 이상</span></div>`)})}
+/* 11-13 회장님 지시: 화면 맨 왼쪽 '업종 지도' 배너(업종별 색깔 상자) — 네이버 업종 시세, 정보 제공용 */
+const SECN={"반도체와반도체장비":"반도체","디스플레이장비및부품":"디스플레이","디스플레이패널":"디스플레이패널","전기제품":"전기제품·2차전지","생물공학":"바이오","제약":"제약","자동차":"자동차","자동차부품":"자동차부품","조선":"조선","은행":"은행","증권":"증권","화학":"화학","철강":"철강","건설":"건설","항공사":"항공","게임엔터테인먼트":"게임","양방향미디어와서비스":"인터넷","통신장비":"통신장비","우주항공과국방":"방산","전기장비":"전기장비","전기유틸리티":"전력","해운사":"해운","소프트웨어":"소프트웨어","화장품":"화장품","식품":"식품","손해보험":"손해보험","생명보험":"생명보험","석유와가스":"정유","기계":"기계","건강관리장비와용품":"의료기기","전자장비와기기":"전자장비","전자제품":"전자제품","핸드셋":"휴대폰","비철금속":"비철금속","무역회사와판매업체":"상사","방송과엔터테인먼트":"엔터","IT서비스":"IT서비스","창업투자":"창투","건축자재":"건축자재","가스유틸리티":"가스","카드":"카드","기타금융":"지주·금융","복합기업":"지주","호텔,레스토랑,레저":"레저","섬유,의류,신발,호화품":"의류","에너지장비및서비스":"에너지장비","광고":"광고","교육서비스":"교육","백화점과일반상점":"유통","운송인프라":"운송","항공화물운송과물류":"물류","건강관리업체및서비스":"헬스케어","인터넷과카탈로그소매":"온라인쇼핑","무선통신서비스":"통신","다각화된통신서비스":"통신","포장재":"포장재","종이와목재":"제지","음료":"음료","담배":"담배","가정용품":"생활용품"};
+let SECD=null;const secLoad=async()=>{if(SECD!==null)return SECD;try{SECD=await J0("static/sector_kr.json")}catch(e){SECD=false}return SECD};
+async function secRail(V){if(!isPC()||V.querySelector(".secrail"))return;const D=await secLoad();if(!D||!D.rows||!D.rows.length||VIEW!="kr")return;
+ const big=D.rows.slice().sort((a,b)=>b[6]-a[6]).slice(0,26).sort((a,b)=>b[2]-a[2]);const up=D.rows.filter(r=>r[2]>0).length,dn=D.rows.filter(r=>r[2]<0).length;
+ const col=p=>{const a=Math.min(1,Math.abs(p)/3);return p>0?`rgba(232,52,77,${.16+a*.74})`:p<0?`rgba(43,108,240,${.16+a*.74})`:"var(--soft)"};
+ const mx=Math.max(...big.map(r=>r[6]));
+ const box=r=>{const w=r[6]>=mx*.45?2:1;return `<div class="scb${w>1?" w2":""}" style="background:${col(r[2])};${Math.abs(r[2])>1.6?"color:#fff":""}" title="${esc(r[1])} · 상승 ${r[3]} / 하락 ${r[5]} / 전체 ${r[6]}종목"><b>${esc(SECN[r[1]]||r[1])}</b><span>${r[2]>0?"+":""}${r[2].toFixed(2)}%</span></div>`};
+ V.classList.add("srl");V.insertAdjacentHTML("afterbegin",`<aside class="secrail" aria-label="업종 지도"><div class="srin card"><h3>🧭 업종 지도</h3><div class="srsub">${esc(D.made||D.date)} 기준 · 종목 많은 26개 업종</div><div class="srbar"><span class="up">상승 ${up}</span><i><em style="width:${(up/(up+dn||1)*100).toFixed(0)}%"></em></i><span class="dn">하락 ${dn}</span></div><div class="scg">${big.map(box).join("")}</div><div class="srsub" style="margin-top:8px">색: 빨강 상승 · 파랑 하락 · 넓은 칸은 종목 수가 많은 업종<br>출처 ${esc(D.src||"")} · 정보 제공용</div></div></aside>`)}
 /* B안(11-13 회장님 승인): 10년 학습 'AI 상대 순위(시험)' — 매수 추천 아님 */
 let AIR=null;const aiRank=async()=>{if(AIR!==null)return AIR;try{AIR=await J0("static/rank_kr.json")}catch(e){AIR=false}return AIR};
 async function aiCard(V){if(V.querySelector("#aicard"))return;const R=await aiRank();if(!R||!R.rows)return;const L=R.rows.filter(r=>r[4]).slice(0,12);
