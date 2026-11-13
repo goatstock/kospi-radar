@@ -502,7 +502,7 @@ function nightCards(N){const f2=v=>v==null?"-":Number(v).toLocaleString("en-US",
  if(!IDXH)idxLoad();const NB=IDXH&&IDXH.night,bt=NB&&NB.beta>0&&NB.beta<2?NB.beta:null;
  const nq=N["NQ=F"]||[],d=nq[0]&&nq[3]?(nq[0]/nq[3]-1)*100:null,est=N.fut[0]&&d!=null&&bt!=null?N.fut[0]*(1+bt*d/100):null,ec=est&&N.fut[0]?(est/N.fut[0]-1)*100:null;
  return `<div class="card ixc night"><span class="ixn">🌙 야선 통계 추정 <small style="font-weight:400">(실시세 아님)</small></span><b class="ixv">${est?f2(est):"계산 중"}</b>${ec==null?"":pp(ec)}<span class="ixs">주간 종가 ${f2(N.fut[0])} 대비 · 장마감 뒤 나스닥선물 ${d==null?"-":(d>0?"+":"")+d.toFixed(2)+"%"} × 계수 ${bt==null?"-":bt.toFixed(2)}${NB?` (지난 ${NB.n}일 실제 관계 · 방향 적중 ${NB.hit}% · 평균 오차 ±${NB.mae}%)`:""}</span></div>
- <div class="card ixc night"><span class="ixn">나스닥 선물</span><b class="ixv">${f2(nq[0])}</b>${pp(nq[1])}<span class="ixs"><span class="rtdot"></span>실시간 ${esc(N.t.slice(0,5))} · 장마감 뒤 ${d==null?"-":(d>0?"+":"")+d.toFixed(2)+"%"}</span></div>`}
+ <div class="card ixc night"><span class="ixn">나스닥 선물</span><b class="ixv">${f2(nq[0])}</b>${pp(nq[1])}<span class="ixs">${(()=>{const t=nq[2]?new Date(nq[2]*1000+9*3600e3):null;return t?`시세 ${String(t.getUTCHours()).padStart(2,"0")}:${String(t.getUTCMinutes()).padStart(2,"0")} · `:""})()}CME 10분 지연(무료 시세) · 장마감 뒤 ${d==null?"-":(d>0?"+":"")+d.toFixed(2)+"%"}</span></div>`}
 async function nightTick(){if(!isNight()||document.hidden)return;try{NIGHT=await fetch(RT+"/night").then(r=>r.json());try{localStorage.setItem("goat_night",JSON.stringify(NIGHT))}catch(e){}}catch(e){return}
  const el=document.getElementById("nightrow");if(el)el.innerHTML=nightCards(NIGHT)}
 setInterval(nightTick,30000);window.addEventListener("load",()=>setTimeout(nightTick,200));
