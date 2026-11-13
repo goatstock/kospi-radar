@@ -12,6 +12,7 @@ function walk(d) { return fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: 
     try { list = execSync(`git diff --name-only ${process.env.BEFORE} ${process.env.AFTER}`).toString().split("\n").filter(Boolean); }
     catch (e) { list = null; }
   }
+  if (list && list.some(f => /^(\.github\/workflows\/sync\.yml|tools\/deploy\/)/.test(f))) list = null; // 올리기 설정이 바뀌면 전체 다시
   if (!list) list = [...APP, ...walk("data"), ...walk("static")];
   const items = [];
   for (const f of list) {
