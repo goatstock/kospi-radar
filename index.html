@@ -304,6 +304,7 @@ function agree(){if(isPC()){shell(landing());$("#badge").textContent="체험 시
 function ended(msg){shell(`<div class="card" style="display:flex;flex-direction:column;gap:12px"><b style="font-size:22px;letter-spacing:-.02em">체험이 끝났습니다</b>
   <div style="font-size:14px;color:var(--sub);line-height:1.6">${esc(msg)} 써 주셔서 감사합니다.<br>정식판 소식은 이 링크를 보내 드린 분께 문의해 주세요.</div>${DISC}</div>`);$("#badge").textContent="체험 종료";return false}
 /* 실시간: Cloudflare 중계 서버(goatstock-live)에서 장중 10초마다 */
+if(/(^|\.)github\.io$/.test(location.hostname))location.replace("https://goatstock-web.ppopposs22.workers.dev/");
 const SERVER=!/(^|\.)github\.io$|^localhost$|^127\.|^$/.test(location.hostname);
 const RT=SERVER?location.origin+"/rt":"https://goatstock-live.ppopposs22.workers.dev";
 const KR_HOL=["2026-01-01","2026-02-16","2026-02-17","2026-02-18","2026-03-02","2026-05-01","2026-05-05","2026-05-25","2026-06-03","2026-08-17","2026-09-24","2026-09-25","2026-10-05","2026-10-09","2026-12-25","2026-12-31","2027-01-01"];
