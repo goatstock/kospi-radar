@@ -20,8 +20,36 @@ def bars(sym, rng, itv, fmt):
         if None in (o, h, l, c): continue
         out.append([datetime.datetime.utcfromtimestamp(ts + off).strftime(fmt), round(o, 2), round(h, 2), round(l, 2), round(c, 2)])
     return out
+NV = {"^KS11": "KOSPI", "^KQ11": "KOSDAQ", "^KS200": "KPI200"}
+NH = {"User-Agent": "Mozilla/5.0", "Referer": "https://m.stock.naver.com/"}
+def naver(code):  # 국내 지수는 앱의 다른 숫자와 맞도록 네이버 자료를 쓴다
+    t = datetime.datetime.utcnow() + datetime.timedelta(hours=9); e = t.strftime("%Y%m%d"); s0 = (t - datetime.timedelta(days=740)).strftime("%Y%m%d")
+    j = None
+    for k in range(3):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(f"https://api.stock.naver.com/chart/domestic/index/{code}/day?startDateTime={s0}0000&endDateTime={e}2359", headers=NH), timeout=20) as r: j = json.loads(r.read().decode()); break
+        except Exception: time.sleep(2)
+    d = [[f"{x['localDate'][:4]}-{x['localDate'][4:6]}-{x['localDate'][6:]}", x["openPrice"], x["highPrice"], x["lowPrice"], x["closePrice"]] for x in (j or []) if x.get("closePrice")]
+    m = []
+    if d:
+        day = d[-1][0].replace("-", "")
+        try:
+            with urllib.request.urlopen(urllib.request.Request(f"https://api.stock.naver.com/chart/domestic/index/{code}/minute?startDateTime={day}0900&endDateTime={day}1530", headers=NH), timeout=20) as r: mj = json.loads(r.read().decode())
+            cur = None
+            for x in mj:
+                hm = x["localDateTime"][8:12]; k5 = f"{hm[:2]}:{int(hm[2:]) // 5 * 5:02d}"; c = x["currentPrice"]; o = x.get("openPrice") or c; h = x.get("highPrice") or c; l = x.get("lowPrice") or c
+                if not cur or cur[0] != k5:
+                    if cur: m.append(cur)
+                    cur = [k5, o, h, l, c]
+                else: cur[2] = max(cur[2], h); cur[3] = min(cur[3], l); cur[4] = c
+            if cur: m.append(cur)
+        except Exception as ex: print("분봉 실패", code, ex)
+    return d, m
 D = {}
 for s, n in SY.items():
+    if s in NV:
+        d, m = naver(NV[s])
+        if d: D[s] = {"n": n, "d": d, "m": m}; continue
     d = bars(s, "2y", "1d", "%Y-%m-%d"); m = bars(s, "1d", "5m", "%H:%M"); time.sleep(0.3)
     if d: D[s] = {"n": n, "d": d, "m": m}
 now = datetime.datetime.utcnow() + datetime.timedelta(hours=9)
