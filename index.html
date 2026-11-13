@@ -169,6 +169,19 @@ body.pc{padding-bottom:0}
 .lhonest{display:flex;flex-direction:column;gap:6px;border:1px solid var(--acc)}.lhonest b{font-size:19px}.lhonest span{color:var(--sub);line-height:1.6}
 .lfaq{padding:10px 0;border-bottom:1px solid var(--line)}.lfaq summary{cursor:pointer;font-weight:700}.lfaq span{display:block;margin-top:6px;color:var(--sub)}
 .lfoot{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;color:var(--mute);font-size:13px;padding:10px 0 30px}
+.pc header{border-bottom:1px solid var(--line)}
+body.pc:not([data-mt=dark]) header{background:rgba(255,255,255,.94)}
+body.pc:not([data-mt=dark]) nav button.on{background:none;color:var(--acc);box-shadow:inset 0 -3px 0 var(--acc);border-radius:0}
+.pc .pchero{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;padding:22px 28px 0;margin:0 0 16px;border-radius:20px;background:linear-gradient(100deg,var(--card) 40%,var(--accBg));border:1px solid var(--line);overflow:hidden;min-height:100px}
+.pchero h1{margin:0 0 6px;font-size:30px;letter-spacing:-.5px;color:var(--ink)}
+.pchero p{margin:0 0 22px;color:var(--sub);font-size:15px}
+.hchip{font-size:14px;font-weight:700;color:var(--acc);background:var(--accBg);padding:4px 12px;border-radius:99px;vertical-align:middle;border:1px solid var(--warnBd)}
+.hbars{display:flex;align-items:flex-end;gap:6px;height:92px;flex:none}
+.hbars i{display:block;width:12px;border-radius:4px 4px 0 0;background:linear-gradient(var(--acc2),color-mix(in srgb,var(--acc) 15%,transparent));opacity:.5}
+.pc .card>h3:first-child{position:relative;padding-left:22px}
+.pc .card>h3:first-child::before{content:"";position:absolute;left:0;top:.2em;width:14px;height:15px;background:linear-gradient(var(--acc),var(--acc)) 0 100%/3.5px 50% no-repeat,linear-gradient(var(--acc),var(--acc)) 5px 100%/3.5px 78% no-repeat,linear-gradient(var(--acc),var(--acc)) 10px 100%/3.5px 100% no-repeat}
+#pquick input{width:100%;box-sizing:border-box;height:44px;border:1px solid var(--line);border-radius:12px;padding:0 12px;font-size:15px;background:var(--soft);color:var(--ink);margin:6px 0}
+#pqbox .card{box-shadow:none;border:0;padding:10px 0 0;background:none}
 </style>
 </head>
 <body>
@@ -585,11 +598,11 @@ async function pTrade(code,name,side,close,m="KR"){const raw=String($("#pq").val
  const c=PM[m],P=pLoad(m);
  if(!mOpen(m)){/* 장외 주문: 다음 정규장 첫 실시간 가격으로 체결 대기 */
   P.pend=P.pend||[];P.pend.push({t:Date.now(),code,name,side,n});if(!pSave(P,m)){toast("저장에 실패해 주문이 접수되지 않았습니다");return}
-  toast(`${name} ${fmt(n)}주 ${side>0?"매수":"매도"} 예약 · 다음 장 시작 뒤 첫 실시간 가격으로 체결합니다 (모의)`);const box=document.getElementById("pbox");if(box)box.outerHTML=paperBox(code,name,close,m);return}
+  toast(`${name} ${fmt(n)}주 ${side>0?"매수":"매도"} 예약 · 다음 장 시작 뒤 첫 실시간 가격으로 체결합니다 (모의)`);const box=document.getElementById("pbox");if(box)box.outerHTML=paperBox(code,name,close,m);if(VIEW=="paper")setTimeout(()=>go("paper",null,window.scrollY||1),700);return}
  const q=(await pQuote([code],m))[code];if(!(q&&q[0])){toast("지금 시세를 받지 못해 주문을 막았습니다. 잠시 뒤 다시 눌러 주세요");return}
  const r=pFill(P,m,{code,name,side,n},q);if(r){toast(r);return}
  if(!pSave(P,m)){toast("저장에 실패해 이 거래는 기록되지 않았습니다");return}
- toast(`${name} ${fmt(n)}주 ${side>0?"매수":"매도"} · ${amt$(q[0],m)} (모의)`);const box=document.getElementById("pbox");if(box)box.outerHTML=paperBox(code,name,close,m)}
+ toast(`${name} ${fmt(n)}주 ${side>0?"매수":"매도"} · ${amt$(q[0],m)} (모의)`);const box=document.getElementById("pbox");if(box)box.outerHTML=paperBox(code,name,close,m);if(VIEW=="paper")setTimeout(()=>go("paper",null,window.scrollY||1),700)}
 /* 체결 공통: 매수 비용은 평균단가에 포함, 매도 비용은 실현손익에서 차감 */
 function pFill(P,m,o,q){const c=PM[m],px=q[0],h=P.pos[o.code]||{n:0,avg:0,name:o.name},amt=px*o.n,r2=v=>m=="US"?Math.round(v*100)/100:Math.round(v),fee=r2(amt*c.fee);
  if(o.side>0){if(amt+fee>P.cash)return"주문 가능 금액이 부족합니다";P.cash-=amt+fee;h.avg=(h.avg*h.n+amt+fee)/(h.n+o.n);h.n+=o.n;h.name=o.name;P.pos[o.code]=h;P.log.unshift({t:Date.now(),code:o.code,name:o.name,side:"매수",n:o.n,px,fee,tax:0,qt:q[2]||null})}
@@ -625,7 +638,7 @@ async function viewPaper(){const m=PMKT,c=PM[m];await pPend(m);await grades();co
      ${L.pending&&L.pending.codes.length?`<div class="snote"><b>다음 거래일 시가 체결 예정 (${esc(L.pending.sig)} 신호)</b><span>${L.pending.codes.map(x=>`${esc(x[1])} +${Math.round(x[2])}`).join(" · ")}</span></div>`:""}
      ${sumRow(rb,rv,L.cash,m)}${rl||'<div class="empty">지금은 매수후보가 없어 현금으로 기다리는 중입니다</div>'}
      ${L.trades.length?`<details style="margin-top:8px"><summary class="mu" style="cursor:pointer;font-size:13px">원장 거래 내역 ${L.trades.length}건</summary>${L.trades.slice(-30).reverse().map(x=>`<div class="pl"><div><b><span class="tag ${x.side=="매수"?"p":"m"}">${x.side}</span>${esc(x.name)}</b><small>${esc(x.d)} 시가 · ${esc(x.sig)} 신호 · ${fmt(x.n)}주 × ${amt$(x.px,m)}</small></div><div style="align-items:flex-end">${x.pnl!=null?`<b class="${x.pnl>0?"up":x.pnl<0?"dn":""}">${x.pnl>0?"+":x.pnl<0?"-":""}${amt$(Math.abs(x.pnl),m)}</b>`:""}<small>비용 ${amt$(x.cost,m)}</small></div></div>`).join("")}</details>`:""}</div>`})():""}
-   <div class="card"><h3 style="display:flex;justify-content:space-between;align-items:center">내 보유 종목 ${Object.keys(P.pos).length}${Object.keys(P.pos).length?`<button class="pill" style="height:30px;font-size:12px;background:var(--soft);color:var(--sub)" onclick="pSellAll('${m}')">전량 정리</button>`:""}</h3>${(P.pend||[]).length?`<div class="snote"><b>예약 주문 ${P.pend.length}건 · 다음 장 시작 뒤 첫 실시간 가격으로 체결</b><span>${P.pend.map((o,i)=>`${esc(o.name)} ${o.side>0?"매수":"매도"} ${fmt(o.n)}주 <button class="glink" onclick="event.stopPropagation();pCancel('${m}',${i})">취소</button>`).join(" · ")}</span></div>`:""}${rows?sumRow(cost,ev,P.cash,m):""}${rows||`<div class="empty">아직 보유 종목이 없습니다.<br>${m=="US"?"미장":"국내"} 종목 화면 아래 <b>모의 매매</b>에서 사 보세요.</div>`}</div>
+   <div class="card"><h3 style="display:flex;justify-content:space-between;align-items:center">내 보유 종목 ${Object.keys(P.pos).length}${Object.keys(P.pos).length?`<button class="pill" style="height:30px;font-size:12px;background:var(--soft);color:var(--sub)" onclick="pSellAll('${m}')">전량 정리</button>`:""}</h3>${(P.pend||[]).length?`<div class="snote"><b>예약 주문 ${P.pend.length}건 · 다음 장 시작 뒤 첫 실시간 가격으로 체결</b><span>${P.pend.map((o,i)=>`${esc(o.name)} ${o.side>0?"매수":"매도"} ${fmt(o.n)}주 <button class="glink" onclick="event.stopPropagation();pCancel('${m}',${i})">취소</button>`).join(" · ")}</span></div>`:""}${rows?sumRow(cost,ev,P.cash,m):""}${rows||`<div class="empty">아직 보유 종목이 없습니다.<br>${isPC()?"오른쪽":"바로 아래"} <b>빠른 모의 주문</b>에서 종목을 찾아 사 보세요.<br><span class="mu">(${m=="US"?"미장":"국내"} 종목 화면의 모의 매매에서도 됩니다)</span></div>`}</div>
    ${P.log.length?`<div class="card"><h3 style="display:flex;justify-content:space-between;align-items:center">거래 내역 <button class="pill" style="height:30px;font-size:12px;background:var(--soft);color:var(--sub)" onclick="pCsv('${m}')">엑셀(CSV) 저장</button></h3>${pStats(P,m)}${P.log.slice(0,40).map(x=>`<div class="pl" onclick="go('stock',{code:'${esc(x.code)}',m:'${m}'})"><div><b><span class="tag ${x.side=="매수"?"p":"m"}">${x.side}</span>${esc(x.name)}</b><small>${new Date(x.t+9*3600e3).toISOString().slice(5,16).replace("T"," ")} · ${fmt(x.n)}주 × ${amt$(x.px,m)}</small></div><div style="align-items:flex-end">${x.pnl!=null?`<b class="${x.pnl>0?"up":x.pnl<0?"dn":""}">${x.pnl>0?"+":x.pnl<0?"-":""}${amt$(Math.abs(x.pnl),m)}</b>`:""}<small>비용 ${amt$(x.fee+x.tax,m)}</small></div></div>`).join("")}</div>`:""}
    <div class="note">실제 돈·실제 주문과 연결되지 않은 연습 계좌입니다. 기록은 이 기기·이 브라우저에만 저장되어 다른 기기에서는 보이지 않습니다. 실제 체결가는 호가·슬리피지 때문에 다를 수 있습니다.${m=="US"?" 미국 계좌는 달러 기준이며 환율 변동은 반영하지 않습니다.":""} <a href="#" onclick="pReset('${m}');return false" style="color:var(--mute)">계좌 초기화</a></div>${DISC}`};
  draw({});if(cs.length){draw(await pQuote(cs,m));TIMER=setInterval(async()=>{if(VIEW=="paper"&&mOpen(m))draw(await pQuote(cs,m))},10000)}}
@@ -1147,7 +1160,22 @@ function landing(){return `<div class="lnd">
  <div class="warnbox"><b>시작 전에 확인해 주세요</b><span>· 모든 정보는 참고용이며 수익을 보장하지 않습니다. · 투자 판단과 손익은 본인 책임입니다. · 개별 종목 상담이나 매매 대행은 하지 않습니다. · 최근 검증에서 장중 '매수' 판정은 비용을 빼면 평균 손실이었습니다.</span></div>
  <button id="startBtn" class="pill lbtn" style="align-self:center">동의하고 3일 체험 시작</button><div class="note" id="asofNote" style="text-align:center"></div>
  <footer class="lfoot"><b>GOAT STOCK</b><span>창운티에스 · 대표 이상민</span><span>모든 정보는 참고용이며 수익을 보장하지 않습니다.</span></footer></div>`}
-function boot(){PCLAST=isPC();pcShell();try{document.body.dataset.mt=localStorage.getItem("m_theme")||(isPC()?"dark":sysTheme())||"light"}catch(e){document.body.dataset.mt="light"}try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{const t=sysTheme();if(t){document.body.dataset.mt=t;paintTheme()}})}catch(e){}paintTheme();fsApply();if(gate()&&!deepLink()&&!viewLink()&&!/^#w=/.test(location.hash))go("kr");if(tGet()&&/^#w=/.test(location.hash))watchLink();if(tGet())setTimeout(()=>{tour();if(!document.getElementById("tour"))whatsNew()},1500);setTimeout(staleBanner,800);setInterval(staleBanner,600000);window.addEventListener("hashchange",()=>{if(tGet())deepLink()});setInterval(()=>{if(tGet())gate()},60000)}
+/* PC 흰바탕 시안 적용(2026-11-13) + 빠른 모의 주문 */
+const HERO={kr:["국내 시장 대시보드","지수·수급·종목 흐름을 한눈에."],us:["미국 주식 시장","미국 주요 지수·섹터·종목 흐름을 한눈에."],macro:["세계 지표","환율·금리·원자재·주요 지수와 경제 일정을 한눈에."],news:["해외 속보","세계 시장에 영향을 주는 뉴스와 이슈를 빠르게."],paper:["모의투자","가상 돈으로 전략을 연습하고 성과를 기록해 보세요.","가상 투자 · 실제 주문 아님"],score:["성적표","우리의 예측과 판단을 그대로 공개합니다. 좋은 날도, 틀린 날도 숨기지 않습니다."]};
+function heroHTML(v){const h=HERO[v];if(!h)return "";const bars=[18,26,22,34,30,42,38,52,46,60,56,70,64,82].map(x=>`<i style="height:${x}%"></i>`).join("");return `<div class="pchero"><div><h1>${h[0]}${h[2]?` <span class="hchip">${h[2]}</span>`:""}</h1><p>${h[1]}</p></div><div class="hbars" aria-hidden="true">${bars}</div></div>`}
+function quickCard(m){return `<div class="card" id="pquick"><h3>빠른 모의 주문 <span class="ptag">${m=="US"?"미국":"국내"} · 실제 주문 아님</span></h3><input id="pqs" type="search" placeholder="종목명·코드·초성 (예: SK하이닉스, ㅅㅅㅈㅈ)" aria-label="모의 주문할 종목 찾기" autocomplete="off"><div id="pqr" class="list"></div><div id="pqbox"></div></div>`}
+async function quickWire(m){const inp=document.getElementById("pqs");if(!inp)return;let rows=[];try{rows=(await J(`data/${m}/index.json`)).rows||[]}catch(e){}
+ const out=document.getElementById("pqr");inp.oninput=()=>{const q=inp.value.trim().replace(/\s/g,"").toUpperCase();if(!q){out.innerHTML="";return}
+  const hit=rows.filter(r=>String(r[0]).toUpperCase().startsWith(q)||String(r[1]).replace(/\s/g,"").toUpperCase().includes(q)||cho(String(r[1]).replace(/\s/g,"")).startsWith(q)).slice(0,6);
+  out.innerHTML=hit.length?hit.map(r=>`<button class="row" data-c="${esc(r[0])}"><span class="nm"><b>${esc(r[1])}</b><span>${esc(r[0])} · ${esc(r[3]||"")}</span></span><span class="px"><b>${won(r[4],m)}</b>${pct(r[5])}</span></button>`).join(""):'<div class="note">찾는 종목이 없습니다</div>';
+  out.querySelectorAll("button[data-c]").forEach(b=>b.onclick=()=>{const r=rows.find(x=>x[0]==b.dataset.c);if(!r)return;out.innerHTML="";inp.value=r[1];document.getElementById("pqbox").innerHTML=paperBox(r[0],r[1],r[4],m);const p=document.getElementById("pq");if(p)p.focus()})}}
+const __pcL0=pcLayout;
+pcLayout=async function(v){const V=document.getElementById("view");
+ if(v=="paper"&&!V.querySelector("#pquick")){const cards=[...V.querySelectorAll(":scope > .card")];const hold=cards.find(e=>/보유 종목/.test(h3t(e)));const at=hold||cards[0];if(at){at.insertAdjacentHTML("afterend",quickCard(PMKT));quickWire(PMKT)}}
+ await __pcL0(v);if(!isPC())return;
+ const side=V.querySelector(".pcSide"),qc=V.querySelector("#pquick");if(v=="paper"&&side&&qc)side.prepend(qc);
+ if(HERO[v]&&!V.querySelector(".pchero"))V.insertAdjacentHTML("afterbegin",heroHTML(v))};
+function boot(){PCLAST=isPC();pcShell();try{document.body.dataset.mt=localStorage.getItem("m_theme")||(isPC()?"light":sysTheme())||"light"}catch(e){document.body.dataset.mt="light"}try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{const t=sysTheme();if(t){document.body.dataset.mt=t;paintTheme()}})}catch(e){}paintTheme();fsApply();if(gate()&&!deepLink()&&!viewLink()&&!/^#w=/.test(location.hash))go("kr");if(tGet()&&/^#w=/.test(location.hash))watchLink();if(tGet())setTimeout(()=>{tour();if(!document.getElementById("tour"))whatsNew()},1500);setTimeout(staleBanner,800);setInterval(staleBanner,600000);window.addEventListener("hashchange",()=>{if(tGet())deepLink()});setInterval(()=>{if(tGet())gate()},60000)}
 boot();
 </script>
 </body>
