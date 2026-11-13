@@ -158,6 +158,38 @@ export default {
         return J({ ok: true }, 200, { "set-cookie": SC(tok, 30 * 86400) });
       }
       if (p === "/api/logout" && req.method === "POST") { const t = cookie(req, "gs"); if (t) await env.DB.prepare("DELETE FROM s WHERE tok=?").bind(await sha(t)).run(); return J({ ok: true }, 200, { "set-cookie": SC("x", 0) }); }
+      if (p.startsWith("/api/chat")) {  // 11-14 회장님 지시 채팅(시안): 로그인·이용 중 회원만, 투자 권유·홍보·연락처 차단, 신고 3번이면 숨김, 7일 보관
+        const me = await user(req, env); if (!me || !active(me)) return J({ ok: false, msg: "로그인한 회원만 쓸 수 있습니다" }, 401);
+        await env.DB.prepare("CREATE TABLE IF NOT EXISTS c(id INTEGER PRIMARY KEY AUTOINCREMENT, uid INTEGER, nick TEXT, txt TEXT, at INTEGER, rep INTEGER DEFAULT 0, hid INTEGER DEFAULT 0)").run();
+        const nick = me.role === "owner" ? "운영자" : "투자자" + (await sha(me.id + ":" + (env.PEPPER || ""))).slice(0, 4).toUpperCase();
+        if (p === "/api/chat" && req.method === "GET") {
+          const after = Number(u.searchParams.get("after") || 0) || 0;
+          const r = await env.DB.prepare("SELECT id,nick,txt,at,uid FROM c WHERE id>? AND hid=0 AND at>? ORDER BY id DESC LIMIT 60").bind(after, now() - 7 * DAY).all();
+          return J({ ok: true, me: nick, owner: me.role === "owner", rows: (r.results || []).reverse().map(x => [x.id, x.nick, x.txt, x.at, x.uid === me.id]) });
+        }
+        if (p === "/api/chat" && req.method === "POST") {
+          if (!(await limit(env, "ch:" + me.id, 6, 60000)) || !(await limit(env, "chd:" + me.id, 300, DAY))) return J({ ok: false, msg: "너무 빨리 보내고 있습니다. 잠시 뒤 다시 보내 주세요." }, 429);
+          const b = await req.json().catch(() => ({})); const txt = String(b.txt || "").replace(/[\u0000-\u001f]/g, " ").trim().slice(0, 300);
+          if (!txt) return J({ ok: false, msg: "내용을 입력해 주세요" }, 400);
+          if (/https?:|www\.|\.(com|kr|net|io|gg|me|ly)\b|open\.kakao|카톡|카카오톡|텔레|telegram|t\.me|밴드|리딩|유료\s*방|vip\s*방|수익\s*(보장|확정)|무조건\s*(오|상승|수익)|원금\s*보장|문의\s*주|010[-\s]?\d{3,4}|\d{2,3}[-\s]\d{3,4}[-\s]\d{4}/i.test(txt))
+            return J({ ok: false, msg: "링크·연락처·리딩방 홍보·수익 보장 같은 글은 올릴 수 없습니다" }, 400);
+          await env.DB.prepare("INSERT INTO c(uid,nick,txt,at) VALUES(?,?,?,?)").bind(me.id, nick, txt, now()).run();
+          await env.DB.prepare("DELETE FROM c WHERE at<?").bind(now() - 7 * DAY).run();
+          return J({ ok: true });
+        }
+        if (p === "/api/chat/report" && req.method === "POST") {
+          const b = await req.json().catch(() => ({})); const id = Number(b.id) || 0;
+          if (!(await limit(env, "cr:" + me.id + ":" + id, 1, 7 * DAY))) return J({ ok: true, msg: "이미 신고했습니다" });
+          await env.DB.prepare("UPDATE c SET rep=rep+1, hid=CASE WHEN rep+1>=3 THEN 1 ELSE hid END WHERE id=?").bind(id).run();
+          return J({ ok: true, msg: "신고했습니다. 3번 이상 신고되면 숨겨집니다." });
+        }
+        if (p === "/api/chat/del" && req.method === "POST") {
+          const b = await req.json().catch(() => ({})); const id = Number(b.id) || 0;
+          if (me.role === "owner") await env.DB.prepare("UPDATE c SET hid=1 WHERE id=?").bind(id).run(); else await env.DB.prepare("UPDATE c SET hid=1 WHERE id=? AND uid=?").bind(id, me.id).run();
+          return J({ ok: true });
+        }
+        return J({ ok: false }, 404);
+      }
       if (p === "/api/me") {
         const me = await user(req, env); if (!me) return J({ ok: false }, 401);
         const [a, b] = me.email.split("@");
