@@ -1,4 +1,4 @@
-const C="goat-v20261114w3-d20261113";
+const C="goat-v20261114w4-d20261113";
 self.addEventListener("install",e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(["./","index.html","manifest.json","icon-192.png","icon-512.png","logo.png"])));self.skipWaiting()});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))));self.clients.claim()});
 /* 화면(UI)은 오프라인 대체 허용. 시세·분석 자료(data/)는 네트워크 실패 시 저장본을 주되 'X-From-Cache' 표시를 붙이고,

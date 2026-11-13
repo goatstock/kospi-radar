@@ -286,7 +286,7 @@ body:not(.pc) .hero .hmini b,body[data-mt=dark] .hero .hmini b{color:#fff}
 .scg{display:grid;grid-template-columns:1fr 1fr;gap:4px}.scb{border-radius:8px;padding:7px 4px;min-height:46px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--ink);animation:scin .5s both}.scb.w2{grid-column:span 2;min-height:54px}.scb b{font-size:12.5px;line-height:1.2;word-break:keep-all}.scb.w2 b{font-size:14px}.scb span{font-size:11.5px;opacity:.9;margin-top:2px}
 #tfseg .nolv{opacity:.55}
 .ixc{cursor:pointer}.ixmod{position:fixed;inset:0;z-index:300;background:rgba(15,16,30,.45);display:flex;align-items:center;justify-content:center;padding:16px}.ixbox{width:min(980px,100%);max-height:92vh;overflow:auto;padding:16px}.ixhd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:18px}.ixnow{margin:6px 0;font-size:15px}.ixnow b{font-size:22px;font-family:Inter,sans-serif}
-#chart svg{cursor:grab;user-select:none}#chart svg:active{cursor:grabbing}
+#chart{overflow:hidden}#ixch{overflow:hidden}#chart svg{cursor:grab;user-select:none;will-change:transform}#chart svg:active{cursor:grabbing}
 .scb.scl{cursor:pointer}.scb.scl:hover{outline:2px solid var(--acc);outline-offset:-2px}.smem{margin-top:8px;border:1px solid var(--line);border-radius:10px;padding:6px;background:var(--card)}.smh{display:flex;align-items:center;gap:6px;padding:2px 4px 6px;font-size:13px}.smh button{margin-left:auto;border:0;background:none;cursor:pointer;color:var(--sub)}.smr{display:flex;justify-content:space-between;width:100%;border:0;border-top:1px solid var(--line);background:none;padding:6px 4px;font:inherit;font-size:12.5px;color:var(--ink);cursor:pointer}.smr:hover{background:var(--soft)}
 .aival{margin-top:8px}.aival summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--acc)}.aival table{font-size:12.5px}.aival .aiw td{background:color-mix(in srgb,#2B6CF0 8%,transparent)}
 .scb:nth-child(3n){animation-delay:.08s}.scb:nth-child(3n+1){animation-delay:.16s}@keyframes scin{from{opacity:0;transform:scale(.92)}}
@@ -792,7 +792,9 @@ function bindZoom(){const svg=$("#chart svg");if(!svg)return;const n=Number(svg.
   svg.addEventListener("pointerdown",e=>{svg.setPointerCapture(e.pointerId);pts.set(e.pointerId,e.clientX);if(pts.size==1){startX=e.clientX;startO=ZO}else if(pts.size==2){const v=[...pts.values()];startD=Math.abs(v[0]-v[1]);startN=n}});
   svg.addEventListener("pointermove",e=>{if(!pts.has(e.pointerId))return;pts.set(e.pointerId,e.clientX);const w=svg.getBoundingClientRect().width||1;
     if(pts.size==2&&startD){const v=[...pts.values()],d=Math.abs(v[0]-v[1]);if(d>10){const nn=Math.round(startN*startD/d);if(Math.abs(nn-curN())>=2){ZN=nn;drawChart()}}}
-    else if(pts.size==1&&startX!=null){const dx=e.clientX-startX,bars=Math.round(dx/w*n);if(bars!==0&&ZO!==Math.max(0,startO+bars)){ZO=Math.max(0,startO+bars);drawChart()}}});
+    else if(pts.size==1&&startX!=null){let dx=e.clientX-startX;if(startO==0&&dx<0)dx*=.15;svg.style.transition="none";svg.style.transform=`translateX(${dx}px)`;svg.__dx=dx}});
+  const endDrag=e=>{pts.delete(e.pointerId);if(pts.size==0&&startX!=null&&svg.__dx){const w=svg.getBoundingClientRect().width||1,bars=Math.round(svg.__dx/w*n);svg.__dx=0;startX=null;const nz=Math.max(0,startO+bars);if(nz!==ZO){ZO=nz;drawChart()}else{svg.style.transform=""}}};
+  svg.addEventListener("pointerup",endDrag);svg.addEventListener("pointercancel",endDrag);
   let dX=null,dY=null;svg.addEventListener("pointerdown",e=>{dX=e.clientX;dY=e.clientY});
   svg.addEventListener("pointerup",e=>{if(dX==null||Math.abs(e.clientX-dX)>6||Math.abs(e.clientY-dY)>6||!window.__CB)return;const r=svg.getBoundingClientRect(),vb=svg.viewBox.baseVal,xx=(e.clientX-r.left)/r.width*vb.width;barInfo(Math.max(0,Math.min(window.__CB.length-1,Math.floor(xx/window.__CBW))))});
   const up=e=>{pts.delete(e.pointerId);if(pts.size<2)startD=null;if(pts.size==0)startX=null};svg.addEventListener("pointerup",up);svg.addEventListener("pointercancel",up)}
@@ -1376,8 +1378,9 @@ function idxDraw(){const D=IDXH,box=document.getElementById("ixch");if(!box)retu
  const svg=document.getElementById("ixsvg");let sx=null,so=0;svg.style.touchAction="none";svg.style.cursor="grab";
  svg.addEventListener("wheel",e=>{e.preventDefault();IXS.n=Math.round(n*(e.deltaY>0?1.25:0.8));idxDraw()},{passive:false});
  svg.addEventListener("pointerdown",e=>{svg.setPointerCapture(e.pointerId);sx=e.clientX;so=IXS.o;svg.style.cursor="grabbing"});
- svg.addEventListener("pointermove",e=>{if(sx==null)return;const w=svg.getBoundingClientRect().width||1,b=Math.round((e.clientX-sx)/w*n);if(b&&IXS.o!==Math.max(0,so+b)){IXS.o=Math.max(0,so+b);idxDraw()}});
- svg.addEventListener("pointerup",()=>{sx=null;svg.style.cursor="grab"})}
+ svg.addEventListener("pointermove",e=>{if(sx==null)return;svg.style.transform=`translateX(${e.clientX-sx}px)`});
+ const up=e=>{if(sx==null)return;const w=svg.getBoundingClientRect().width||1,b=Math.round((e.clientX-sx)/w*n);sx=null;svg.style.cursor="grab";const no=Math.max(0,so+b);if(no!==IXS.o){IXS.o=no;idxDraw()}else svg.style.transform=""};
+ svg.addEventListener("pointerup",up);svg.addEventListener("pointercancel",up)}
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest(".ixc");if(!t||e.target.closest("#ixmodal"))return;
  const ri=t.dataset.rti,ru=t.dataset.rtui,nn=(t.querySelector(".ixn")||{}).textContent||"";let sym=null,mk=null,note="";
  if(ri)sym=ri=="KOSDAQ"?"^KQ11":"^KS11";else if(ru)sym=ru;else if(/야선/.test(nn)){sym="^KS11";note="야간선물 실시세 차트는 아직 없어 코스피 지수 차트를 보여 드립니다"}else if(/나스닥 선물/.test(nn))sym="NQ=F";
