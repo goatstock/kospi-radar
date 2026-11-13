@@ -172,12 +172,16 @@ body.pc{padding-bottom:0}
 .pc header{border-bottom:1px solid var(--line)}
 body.pc:not([data-mt=dark]) header{background:rgba(255,255,255,.94)}
 body.pc:not([data-mt=dark]) nav button.on{background:none;color:var(--acc);box-shadow:inset 0 -3px 0 var(--acc);border-radius:0}
-.pc .pchero{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;padding:22px 28px 0;margin:0 0 16px;border-radius:20px;background:linear-gradient(100deg,var(--card) 40%,var(--accBg));border:1px solid var(--line);overflow:hidden;min-height:100px}
-.pchero h1{margin:0 0 6px;font-size:30px;letter-spacing:-.5px;color:var(--ink)}
-.pchero p{margin:0 0 22px;color:var(--sub);font-size:15px}
-.hchip{font-size:14px;font-weight:700;color:var(--acc);background:var(--accBg);padding:4px 12px;border-radius:99px;vertical-align:middle;border:1px solid var(--warnBd)}
-.hbars{display:flex;align-items:flex-end;gap:6px;height:92px;flex:none}
-.hbars i{display:block;width:12px;border-radius:4px 4px 0 0;background:linear-gradient(var(--acc2),color-mix(in srgb,var(--acc) 15%,transparent));opacity:.5}
+.pc .pchero{position:relative;display:flex;justify-content:space-between;align-items:stretch;gap:20px;padding:0 0 0 32px;margin:0 0 16px;border-radius:22px;background:radial-gradient(circle at 1px 1px,color-mix(in srgb,var(--acc) 12%,transparent) 1px,transparent 0) 0 0/18px 18px,linear-gradient(100deg,var(--card) 28%,var(--accBg) 78%,color-mix(in srgb,var(--acc) 18%,var(--accBg)));border:1px solid var(--line);overflow:hidden;min-height:150px;box-shadow:var(--shadow)}
+.pc .pchero::after{content:"";position:absolute;right:-60px;top:-80px;width:320px;height:320px;border-radius:50%;background:radial-gradient(color-mix(in srgb,var(--acc2) 22%,transparent),transparent 70%);pointer-events:none}
+.pchero .htx{padding:22px 0 20px;display:flex;flex-direction:column;justify-content:center;min-width:0;z-index:1}
+.pchero h1{margin:8px 0 6px;font-size:34px;font-weight:800;letter-spacing:-1px;color:var(--ink);background:linear-gradient(90deg,var(--ink) 55%,var(--accD));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.pchero p{margin:0;color:var(--sub);font-size:15.5px}
+.hstat{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;font-size:12.5px;color:var(--sub);background:var(--card);border:1px solid var(--line);border-radius:99px;padding:5px 12px;box-shadow:0 1px 4px rgba(30,35,75,.05)}
+.hstat b{color:var(--ink);font-family:Inter,sans-serif}.hstat .hsep{width:1px;height:12px;background:var(--line)}
+.hdot{width:8px;height:8px;border-radius:50%;background:var(--mute)}.hdot.on{background:#12A873;box-shadow:0 0 0 4px rgba(18,168,115,.18)}
+.hchip{font-size:14px;font-weight:700;color:var(--acc);-webkit-text-fill-color:var(--acc);background:var(--accBg);padding:4px 12px;border-radius:99px;vertical-align:middle;border:1px solid var(--warnBd)}
+.hart{height:150px;width:auto;max-width:56%;flex:none;align-self:flex-end;z-index:1;display:block}
 .pc .card>h3:first-child{position:relative;padding-left:22px}
 .pc .card>h3:first-child::before{content:"";position:absolute;left:0;top:.2em;width:14px;height:15px;background:linear-gradient(var(--acc),var(--acc)) 0 100%/3.5px 50% no-repeat,linear-gradient(var(--acc),var(--acc)) 5px 100%/3.5px 78% no-repeat,linear-gradient(var(--acc),var(--acc)) 10px 100%/3.5px 100% no-repeat}
 #pquick input{width:100%;box-sizing:border-box;height:44px;border:1px solid var(--line);border-radius:12px;padding:0 12px;font-size:15px;background:var(--soft);color:var(--ink);margin:6px 0}
@@ -224,6 +228,11 @@ body.pc:not([data-mt=dark]) .hero div[style*="color:var(--mute)"]{color:var(--mu
 .pc .thermo .tgv span{font-size:14px;font-weight:700;color:var(--sub)}
 .pc .thermo .thb{display:none}
 .pc .thermo .rngs{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
+.hkpi{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.hk{display:flex;flex-direction:column;gap:1px;background:color-mix(in srgb,var(--card) 85%,transparent);border:1px solid var(--line);border-radius:14px;padding:8px 14px;min-width:110px;backdrop-filter:blur(4px)}
+.hk span{font-size:11.5px;color:var(--mute)}.hk b{font-family:Inter,"Pretendard Variable",sans-serif;font-size:18px;font-weight:800;color:var(--ink)}.hk small,.hk .up,.hk .dn{font-size:12px;font-weight:700}.hk small{color:var(--sub);font-weight:500}
+.hk span.up{color:var(--up)}.hk span.dn{color:var(--dn)}
+.pchero.hv-kr .hart{height:240px;max-width:58%}
 </style>
 </head>
 <body>
@@ -1204,7 +1213,20 @@ function landing(){return `<div class="lnd">
  <footer class="lfoot"><b>GOAT STOCK</b><span>창운티에스 · 대표 이상민</span><span>모든 정보는 참고용이며 수익을 보장하지 않습니다.</span></footer></div>`}
 /* PC 흰바탕 시안 적용(2026-11-13) + 빠른 모의 주문 */
 const HERO={kr:["국내 시장 대시보드","지수·수급·종목 흐름을 한눈에."],us:["미국 주식 시장","미국 주요 지수·섹터·종목 흐름을 한눈에."],macro:["세계 지표","환율·금리·원자재·주요 지수와 경제 일정을 한눈에."],news:["해외 속보","세계 시장에 영향을 주는 뉴스와 이슈를 빠르게."],paper:["모의투자","가상 돈으로 전략을 연습하고 성과를 기록해 보세요.","가상 투자 · 실제 주문 아님"],score:["성적표","우리의 예측과 판단을 그대로 공개합니다. 좋은 날도, 틀린 날도 숨기지 않습니다."]};
-function heroHTML(v){const h=HERO[v];if(!h)return "";const bars=[18,26,22,34,30,42,38,52,46,60,56,70,64,82].map(x=>`<i style="height:${x}%"></i>`).join("");return `<div class="pchero"><div><h1>${h[0]}${h[2]?` <span class="hchip">${h[2]}</span>`:""}</h1><p>${h[1]}</p></div><div class="hbars" aria-hidden="true">${bars}</div></div>`}
+function heroArt(v){const C=[[300,96,108],[318,92,104],[336,98,88],[354,84,94],[372,90,78],[390,74,86],[408,80,70],[426,66,76],[444,70,58],[462,54,64],[480,58,44],[498,40,50]];
+ const cand=C.map(([x,o,c],i)=>{const up=c<o,t=Math.min(o,c),h=Math.max(4,Math.abs(o-c));return `<line x1="${x+5}" y1="${t-8}" x2="${x+5}" y2="${t+h+8}" stroke="var(--acc)" stroke-opacity=".45" stroke-width="1.5"/><rect x="${x}" y="${t}" width="10" height="${h}" rx="2" fill="${up?"var(--acc2)":"var(--acc)"}" fill-opacity="${up?.75:.35}"/>`}).join("");
+ const line=`<polyline points="${C.map(([x,,c])=>(x+5)+","+c).join(" ")}" fill="none" stroke="url(#hl)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="503" cy="50" r="5" fill="var(--acc2)"/><circle cx="503" cy="50" r="11" fill="var(--acc2)" fill-opacity=".2"/>`;
+ const mt=`<path d="M0 150 L50 112 L95 128 L165 82 L235 120 L290 98 L360 124 L430 92 L520 118 L520 150Z" fill="url(#hm)"/>`;
+ const ob={kr:`<g fill="var(--acc)" fill-opacity=".55"><rect x="128" y="104" width="96" height="30" rx="2"/><rect x="140" y="100" width="72" height="6" fill-opacity=".3"/><path d="M112 102 Q176 84 240 102 L232 108 Q176 94 120 108Z"/><path d="M138 86 Q176 72 214 86 L208 92 Q176 82 144 92Z"/><rect x="152" y="92" width="48" height="10" fill-opacity=".4"/><rect x="166" y="114" width="20" height="20" fill="var(--card)" fill-opacity=".9"/></g><g fill="var(--acc)" fill-opacity=".5"><rect x="262" y="58" width="5" height="76"/><path d="M256 74 h17 l-3 9 h-11Z"/><rect x="263.5" y="40" width="2" height="20"/></g>`,
+ us:`<g fill="var(--acc)" fill-opacity=".45">${[[110,70,22],[136,48,18],[158,88,26],[188,36,20],[212,64,24],[240,96,18]].map(([x,y,w])=>`<rect x="${x}" y="${y}" width="${w}" height="${150-y}" rx="2"/>`).join("")}</g><g fill="var(--card)" fill-opacity=".7">${Array.from({length:18},(_,i)=>`<rect x="${140+(i%3)*5}" y="${56+Math.floor(i/3)*12}" width="3" height="5"/>`).join("")}</g>`,
+ macro:`<g fill="none" stroke="var(--acc)" stroke-opacity=".5" stroke-width="2"><circle cx="190" cy="80" r="52" fill="var(--accBg)" fill-opacity=".8"/><ellipse cx="190" cy="80" rx="22" ry="52"/><ellipse cx="190" cy="80" rx="42" ry="52"/><path d="M138 80 H242 M146 54 H234 M146 106 H234"/></g>`,
+ news:`<g><circle cx="190" cy="80" r="50" fill="var(--accBg)"/><path d="M198 40 L168 86 H188 L178 122 L214 70 H192Z" fill="var(--acc2)" fill-opacity=".75"/></g>`,
+ paper:`<g fill="var(--acc)">${[[150,4],[190,6],[230,8]].map(([x,n])=>Array.from({length:n},(_,i)=>`<ellipse cx="${x}" cy="${130-i*9}" rx="18" ry="6" fill-opacity="${.25+i*.07}"/>`).join("")).join("")}</g>`,
+ score:`<g fill="none" stroke="var(--acc)" stroke-width="7" stroke-opacity=".6"><circle cx="180" cy="72" r="34" fill="var(--accBg)"/><path d="M204 96 L232 124" stroke-linecap="round"/><path d="M164 72 L176 84 L198 60" stroke="var(--acc2)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></g>`}[v]||"";
+ return `<svg class="hart" viewBox="0 0 520 150" preserveAspectRatio="xMaxYMax meet" aria-hidden="true"><defs><linearGradient id="hm" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--acc)" stop-opacity=".22"/><stop offset="1" stop-color="var(--acc)" stop-opacity="0"/></linearGradient><linearGradient id="hl" x1="0" x2="1"><stop offset="0" stop-color="var(--acc)"/><stop offset="1" stop-color="var(--acc2)"/></linearGradient></defs>${mt}${ob}${cand}${line}</svg>`}
+function heroStat(v){const d=new Date(Date.now()+9*3600e3),W="일월화수목금토"[d.getUTCDay()],p=n=>String(n).padStart(2,"0");const t=`${d.getUTCMonth()+1}/${d.getUTCDate()}(${W}) ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`;
+ const kr=mktOpen(),us=usOpen();return `<div class="hstat"><span class="hdot ${kr||us?"on":""}"></span><b>${t}</b><span>한국 시간</span><span class="hsep"></span><span>국내 ${kr?'<b class="up">장중</b>':"장 마감"}</span><span>미장 ${us?'<b class="up">장중</b>':"쉬는 중"}</span></div>`}
+function heroHTML(v){const h=HERO[v];if(!h)return "";return `<div class="pchero hv-${v}"><div class="htx">${heroStat(v)}<h1>${h[0]}${h[2]?` <span class="hchip">${h[2]}</span>`:""}</h1><p>${h[1]}</p></div>${heroArt(v)}</div>`}
 function quickCard(m){return `<div class="card" id="pquick"><h3>빠른 모의 주문 <span class="ptag">${m=="US"?"미국":"국내"} · 실제 주문 아님</span></h3><input id="pqs" type="search" placeholder="종목명·코드·초성 (예: SK하이닉스, ㅅㅅㅈㅈ)" aria-label="모의 주문할 종목 찾기" autocomplete="off"><div id="pqr" class="list"></div><div id="pqbox"></div></div>`}
 async function quickWire(m){const inp=document.getElementById("pqs");if(!inp)return;let rows=[];try{rows=(await J(`data/${m}/index.json`)).rows||[]}catch(e){}
  const out=document.getElementById("pqr");inp.oninput=()=>{const q=inp.value.trim().replace(/\s/g,"").toUpperCase();if(!q){out.innerHTML="";return}
@@ -1217,7 +1239,10 @@ pcLayout=async function(v){const V=document.getElementById("view");
  await __pcL0(v);if(!isPC())return;
  {const nr=V.querySelector("#nightrow"),ib=V.querySelector(".ixb");if(nr&&ib&&!ib.contains(nr)){nr.style.display="contents";ib.appendChild(nr)}}
  const side=V.querySelector(".pcSide"),qc=V.querySelector("#pquick");if(v=="paper"&&side&&qc)side.prepend(qc);
- if(HERO[v]&&!V.querySelector(".pchero"))V.insertAdjacentHTML("afterbegin",heroHTML(v))};
+ if(HERO[v]&&!V.querySelector(".pchero")){V.insertAdjacentHTML("afterbegin",heroHTML(v));if(v=="kr")heroKpi()}};
+async function heroKpi(){const t=document.querySelector(".pchero .htx");if(!t)return;try{const [r,g]=await Promise.all([J("data/regime.json"),J("data/KR/global.json")]);const k=g.find(x=>x.symbol=="^KS11")||{},q=g.find(x=>x.symbol=="^KQ11")||{};
+ const it=(a,b,c)=>`<div class="hk"><span>${a}</span><b>${b}</b>${c||""}</div>`;
+ t.insertAdjacentHTML("beforeend",`<div class="hkpi">${it("코스피",fmt(k.close,2),pct(k.change_pct))}${it("코스닥",fmt(q.close,2),pct(q.change_pct))}${it("시장 국면",esc(r.state||"-"),`<small>현금 ${r.cash??"-"}%</small>`)}${it("외국인 5일",(r.foreign5>0?"+":"")+fmt(Math.round(r.foreign5||0))+"억",`<small>시장 순매수</small>`)}</div>`)}catch(e){}}
 /* PC: 환율을 4칸 카드 격자로(시안 4) */
 function pcFx(){if(!isPC())return;const tile=box=>{if(!box||box.querySelector(".fxgrid"))return;const rs=[...box.querySelectorAll(":scope > .fxr")];if(!rs.length)return;const g=document.createElement("div");g.className="fxgrid";rs[0].before(g);rs.forEach(r=>{const sv=r.querySelector(".fxh svg");if(sv)sv.setAttribute("preserveAspectRatio","none");g.appendChild(r)})};
  const b=document.getElementById("fxbox");tile(b);tile(document.getElementById("fxbox2"));
