@@ -1,0 +1,24 @@
+name: 연구용 10년 자료 수집
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["tools/lab/hist10y.py"]
+permissions:
+  contents: read
+jobs:
+  get:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python tools/lab/hist10y.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hist10y
+          path: |
+            kr_daily_10y.csv.gz
+            kr_index_10y.json.gz
+          retention-days: 1
