@@ -4,6 +4,6 @@ const { chromium } = require("playwright");
   const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
   await p.addInitScript(() => { localStorage.setItem("goat_tour", "1"); localStorage.setItem("goat_seen_v", JSON.stringify("2026.11.13 · 개선 100회")); localStorage.setItem("gs_trial_start", String(Date.now())); localStorage.setItem("m_theme", "light"); });
   await p.goto("http://localhost:8811/index.html"); await p.waitForTimeout(7000);
-  await p.evaluate(() => { const s = document.getElementById("staleb"); if (s) s.remove(); document.querySelectorAll(".night .ixs").forEach(e => { if (/불러오는/.test(e.textContent)) e.textContent = "로그인 후 실시간"; }); });
+  await p.evaluate(() => { const s = document.getElementById("staleb"); if (s) s.remove(); document.querySelectorAll(".night .ixs").forEach(e => { if (/불러오는/.test(e.textContent)) e.textContent = "로그인 후 실시간" ; }); });
   await p.screenshot({ path: process.argv[2], clip: { x: 0, y: 0, width: 1440, height: 900 } }); await b.close();
 })();

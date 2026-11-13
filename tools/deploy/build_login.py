@@ -15,6 +15,9 @@ for i in range(14):
     mc.append(f'<line x1="{x+2.5}" y1="{t-4:.0f}" x2="{x+2.5}" y2="{b+4:.0f}" stroke="{col}"/><rect x="{x}" y="{t:.0f}" width="5" height="{max(2,b-t):.0f}" fill="{col}"/><rect x="{x}" y="{62-random.uniform(2,8):.0f}" width="5" height="8" fill="#A23CFF" opacity=".25"/>')
 mc.append('<polyline class="drw" points="0,58 15,54 30,56 45,51 60,53 75,49 90,51 105,46 120,48" fill="none" stroke="#A23CFF" stroke-width="1.5"/></svg>')
 s=s.replace('__MINICHART__',''.join(mc))
+import datetime,os as _os
+_t=datetime.datetime.utcnow()+datetime.timedelta(hours=9)
+s=s.replace('__SHOTTIME__',_os.environ.get('SHOTTIME') or f"{_t.month}/{_t.day}({'월화수목금토일'[_t.weekday()]}) {_t:%H:%M}")
 s=s.replace('__SHOT__',open(shot).read().strip())
 import os
 fb=os.path.join(os.path.dirname(shot),'featbg.b64')
