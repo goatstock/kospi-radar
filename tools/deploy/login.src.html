@@ -190,7 +190,12 @@ if(location.hash=="#join")setMode("up");
 $("#fm").onsubmit=async e=>{e.preventDefault();const email=$("#em").value.trim(),pw=$("#pw").value;$("#msg").textContent="";
  if(mode=="up"){if(pw!==$("#pw2").value){$("#msg").textContent="비밀번호 확인이 맞지 않습니다";return}if(!$("#ag").checked){$("#msg").textContent="이용약관·고지에 동의해 주세요";return}}
  $("#go").disabled=true;try{const r=await fetch(mode=="up"?"api/signup":"api/login",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email,pw,agree:mode=="up"})});const j=await r.json().catch(()=>({}));
+  if(r.ok&&j.ok&&j.verify){vbox(email,j.msg);$("#go").disabled=false;return}
   if(r.ok&&j.ok){location.replace("./");return}$("#msg").textContent=j.msg||"잠시 뒤 다시 시도해 주세요"}catch(x){$("#msg").textContent="서버에 연결하지 못했습니다"}$("#go").disabled=false};
+function vbox(email,msg){let b=document.getElementById("vbox");if(!b){$("#msg").insertAdjacentHTML("afterend",'<div id="vbox" style="margin-top:10px;display:flex;flex-direction:column;gap:8px"><input id="vcode" inputmode="numeric" maxlength="6" placeholder="인증 번호 6자리" autocomplete="one-time-code" style="height:46px;border:1px solid #DDD6F3;border-radius:12px;padding:0 14px;font-size:18px;letter-spacing:4px"><button type="button" id="vgo" style="height:44px;border:0;border-radius:12px;background:#7B3DF2;color:#fff;font-weight:800;cursor:pointer">인증하고 체험 시작</button><button type="button" id="vre" style="border:0;background:none;color:#7B3DF2;cursor:pointer;font-size:13px">인증 번호 다시 보내기</button></div>');b=document.getElementById("vbox")}
+ $("#msg").textContent=msg||"";const post=(u,o)=>fetch(u,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(o)}).then(r=>r.json().then(j=>[r,j])).catch(()=>[{ok:false},{msg:"서버에 연결하지 못했습니다"}]);
+ $("#vgo").onclick=async()=>{const [r,j]=await post("api/verify",{email,code:$("#vcode").value});if(r.ok&&j.ok){location.replace("./");return}$("#msg").textContent=j.msg||"다시 시도해 주세요"};
+ $("#vre").onclick=async()=>{const [r,j]=await post("api/resend",{email});$("#msg").textContent=j.msg||""}}
 </script>
 </body>
 </html>

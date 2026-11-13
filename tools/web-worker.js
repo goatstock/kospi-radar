@@ -1,6 +1,7 @@
 // GOAT STOCK 웹 서버 (Cloudflare Worker + D1) — 2026-11-13
 // 목적: 앱 화면·자료를 로그인한 사람에게만 서버에서 내보낸다(공개 저장소에 자료 원본을 두지 않음).
 // 바인딩: DB(D1 goatstock), LIVE(서비스: goatstock-live), OWNER_EMAIL(평문), PEPPER(비밀), REPO(평문, 예: goatstock/kospi-radar)
+// 가입 이메일 인증(11-14 오실장 결정): MAIL_KEY(비밀, Brevo API 키)·MAIL_FROM(평문, Brevo에서 확인된 보내는 주소)이 있으면 켜짐. 없으면 예전처럼 바로 체험 시작.
 // 비밀값은 코드·저장소에 두지 않고 Cloudflare 환경변수로만 둔다.
 
 const AI_BOTS = /GPTBot|ChatGPT-User|OAI-SearchBot|ClaudeBot|Claude-Web|Claude-User|anthropic-ai|CCBot|Bytespider|PerplexityBot|Perplexity-User|Google-Extended|GoogleOther|Applebot-Extended|Amazonbot|meta-externalagent|meta-externalfetcher|FacebookBot|Diffbot|ImagesiftBot|cohere-ai|YouBot|Timpibot|omgili|DataForSeoBot|PetalBot|Scrapy|python-requests|python-urllib|curl\/|Wget|Go-http-client|HeadlessChrome|PhantomJS|node-fetch|undici|axios|httpx|aiohttp|libwww|okhttp|Java\/|Puppeteer|Playwright|Selenium/i;
@@ -35,6 +36,17 @@ function cookie(req, n) { const m = (req.headers.get("cookie") || "").match(new 
 const SC = (t, age) => `gs=${t}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${age}`;
 
 // 간단한 횟수 제한(D1)
+async function vTable(env) { await env.DB.prepare("CREATE TABLE IF NOT EXISTS v(email TEXT PRIMARY KEY, h TEXT, exp INTEGER, n INTEGER DEFAULT 0)").run(); }
+async function sendCode(env, email) {  // 6자리 인증 번호. 저장은 해시로만.
+  await vTable(env); const a = new Uint32Array(1); crypto.getRandomValues(a); const code = String(a[0] % 1000000).padStart(6, "0");
+  await env.DB.prepare("INSERT INTO v(email,h,exp,n) VALUES(?,?,?,0) ON CONFLICT(email) DO UPDATE SET h=excluded.h,exp=excluded.exp,n=0").bind(email, await sha(code + ":" + email + ":" + (env.PEPPER || "")), now() + 10 * 60000).run();
+  try {
+    const r = await fetch("https://api.brevo.com/v3/smtp/email", { method: "POST", headers: { "api-key": env.MAIL_KEY, "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify({ sender: { email: env.MAIL_FROM, name: "GOAT STOCK" }, to: [{ email }], subject: `[GOAT STOCK] 인증 번호 ${code}`,
+        htmlContent: `<div style="font-family:sans-serif;font-size:15px;line-height:1.6"><b>GOAT STOCK 가입 인증 번호</b><p style="font-size:28px;letter-spacing:6px;font-weight:800;margin:12px 0">${code}</p><p>10분 안에 가입 화면에 입력해 주세요. 본인이 가입하지 않았다면 이 메일은 무시하셔도 됩니다.</p></div>` }) });
+    return r.ok;
+  } catch (e) { return false; }
+}
 async function limit(env, key, max, ms) {
   const t = now(), r = await env.DB.prepare("SELECT n,exp FROM rl WHERE k=?").bind(key).first();
   if (!r || r.exp < t) { await env.DB.prepare("INSERT OR REPLACE INTO rl(k,n,exp) VALUES(?,1,?)").bind(key, t + ms).run(); return true; }
@@ -107,15 +119,40 @@ export default {
         if (await env.DB.prepare("SELECT id FROM u WHERE email=?").bind(email).first()) return J({ ok: false, msg: "이미 가입된 이메일입니다. 로그인해 주세요." }, 409);
         const salt = rnd(16), h = await pwHash(pw, salt, env.PEPPER || ""), t = now();
         const role = email === String(env.OWNER_EMAIL || "").toLowerCase() ? "owner" : "trial";
+        if (role !== "owner" && env.MAIL_KEY && env.MAIL_FROM) {  // 이메일 인증을 거쳐야 체험이 시작됨(체험 반복 가입 방지)
+          await env.DB.prepare("INSERT INTO u(email,salt,h,role,created,trial_end,last) VALUES(?,?,?,?,?,?,?)").bind(email, salt, h, "pending", t, 0, t).run();
+          const sent = await sendCode(env, email);
+          return J({ ok: true, verify: true, msg: sent ? "인증 번호를 이메일로 보냈습니다. 10분 안에 입력해 주세요." : "인증 메일을 보내지 못했습니다. 잠시 뒤 '다시 보내기'를 눌러 주세요." });
+        }
         const r = await env.DB.prepare("INSERT INTO u(email,salt,h,role,created,trial_end,last) VALUES(?,?,?,?,?,?,?)").bind(email, salt, h, role, t, t + TRIAL_MS, t).run();
         const tok = rnd(32); await env.DB.prepare("INSERT INTO s(tok,uid,exp,ua) VALUES(?,?,?,?)").bind(await sha(tok), r.meta.last_row_id, t + 30 * DAY, ua.slice(0, 120)).run();
         return J({ ok: true }, 200, { "set-cookie": SC(tok, 30 * 86400) });
       }
+      if (p === "/api/verify" && req.method === "POST") {
+        const b = await req.json().catch(() => ({})); const email = String(b.email || "").trim().toLowerCase(), code = String(b.code || "").replace(/\D/g, "");
+        if (!(await limit(env, "vf:" + ip(req), 30, 15 * 60000))) return J({ ok: false, msg: "시도가 너무 많습니다. 15분 뒤 다시 해 주세요." }, 429);
+        await vTable(env); const v = await env.DB.prepare("SELECT h,exp,n FROM v WHERE email=?").bind(email).first();
+        if (!v || v.exp < now() || v.n >= 5) return J({ ok: false, msg: "인증 번호가 만료됐습니다. '다시 보내기'를 눌러 주세요." }, 400);
+        if ((await sha(code + ":" + email + ":" + (env.PEPPER || ""))) !== v.h) { await env.DB.prepare("UPDATE v SET n=n+1 WHERE email=?").bind(email).run(); return J({ ok: false, msg: "인증 번호가 맞지 않습니다" }, 400); }
+        const usr = await env.DB.prepare("SELECT id,role FROM u WHERE email=?").bind(email).first(); if (!usr) return J({ ok: false, msg: "가입 정보가 없습니다" }, 400);
+        const t = now(); if (usr.role === "pending") await env.DB.prepare("UPDATE u SET role='trial',trial_end=?,last=? WHERE id=?").bind(t + TRIAL_MS, t, usr.id).run();
+        await env.DB.prepare("DELETE FROM v WHERE email=?").bind(email).run();
+        const tok = rnd(32); await env.DB.prepare("INSERT INTO s(tok,uid,exp,ua) VALUES(?,?,?,?)").bind(await sha(tok), usr.id, t + 30 * DAY, ua.slice(0, 120)).run();
+        return J({ ok: true }, 200, { "set-cookie": SC(tok, 30 * 86400) });
+      }
+      if (p === "/api/resend" && req.method === "POST") {
+        const b = await req.json().catch(() => ({})); const email = String(b.email || "").trim().toLowerCase();
+        if (!(await limit(env, "rs:" + ip(req), 5, DAY)) || !(await limit(env, "re:" + email, 3, DAY))) return J({ ok: false, msg: "오늘은 더 보낼 수 없습니다. 내일 다시 해 주세요." }, 429);
+        const usr = await env.DB.prepare("SELECT role FROM u WHERE email=?").bind(email).first();
+        if (!usr || usr.role !== "pending" || !env.MAIL_KEY) return J({ ok: true, msg: "인증이 필요한 계정이면 메일을 보냈습니다." });
+        await sendCode(env, email); return J({ ok: true, msg: "인증 번호를 다시 보냈습니다." });
+      }
       if (p === "/api/login" && req.method === "POST") {
         const b = await req.json().catch(() => ({})); const email = String(b.email || "").trim().toLowerCase(), pw = String(b.pw || "");
         if (!(await limit(env, "li:" + ip(req), 20, 15 * 60000)) || !(await limit(env, "le:" + email, 10, 15 * 60000))) return J({ ok: false, msg: "로그인 시도가 너무 많습니다. 15분 뒤 다시 시도해 주세요." }, 429);
-        const r = await env.DB.prepare("SELECT id,salt,h FROM u WHERE email=?").bind(email).first();
+        const r = await env.DB.prepare("SELECT id,salt,h,role FROM u WHERE email=?").bind(email).first();
         if (!r || (await pwHash(pw, r.salt, env.PEPPER || "")) !== r.h) return J({ ok: false, msg: "이메일 또는 비밀번호가 맞지 않습니다" }, 401);
+        if (r.role === "pending") return J({ ok: true, verify: true, msg: "이메일 인증을 마쳐야 체험이 시작됩니다. 메일의 인증 번호를 넣어 주세요(안 왔으면 다시 보내기)." });
         const tok = rnd(32), t = now(); await env.DB.prepare("INSERT INTO s(tok,uid,exp,ua) VALUES(?,?,?,?)").bind(await sha(tok), r.id, t + 30 * DAY, ua.slice(0, 120)).run();
         await env.DB.prepare("UPDATE u SET last=? WHERE id=?").bind(t, r.id).run();
         return J({ ok: true }, 200, { "set-cookie": SC(tok, 30 * 86400) });
