@@ -2,7 +2,7 @@
 # 메인 화면 지수 칸을 누르면 차트를 보여 주기 위한 것. 시세 조회만.
 import json, time, datetime, urllib.request
 H = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130"}
-SY = {"^KS11": "코스피", "^KQ11": "코스닥", "^KS200": "코스피200", "^GSPC": "S&P500", "^IXIC": "나스닥", "^DJI": "다우", "^SOX": "반도체(SOX)", "NQ=F": "나스닥 선물", "ES=F": "S&P500 선물", "KRW=X": "원/달러"}
+SY = {"^KS11": "코스피", "^KQ11": "코스닥", "^KS200": "코스피200", "^GSPC": "S&P500", "^IXIC": "나스닥", "^DJI": "다우", "^SOX": "반도체(SOX)", "NQ=F": "나스닥 선물", "ES=F": "S&P500 선물", "KRW=X": "원/달러", "^VIX": "VIX(공포지수)", "^N225": "닛케이225", "CL=F": "WTI 원유", "BZ=F": "브렌트유", "GC=F": "금", "SI=F": "은", "NG=F": "천연가스", "BTC-USD": "비트코인", "ETH-USD": "이더리움", "XRP-USD": "리플", "SOL-USD": "솔라나", "EURUSD=X": "유로/달러", "JPY=X": "달러/엔", "SMSN.IL": "삼성전자 GDR(런던)"}
 def get(u):
     for k in range(3):
         try:
