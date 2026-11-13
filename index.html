@@ -233,6 +233,22 @@ body.pc:not([data-mt=dark]) .hero div[style*="color:var(--mute)"]{color:var(--mu
 .hk span{font-size:11.5px;color:var(--mute)}.hk b{font-family:Inter,"Pretendard Variable",sans-serif;font-size:18px;font-weight:800;color:var(--ink)}.hk small,.hk .up,.hk .dn{font-size:12px;font-weight:700}.hk small{color:var(--sub);font-weight:500}
 .hk span.up{color:var(--up)}.hk span.dn{color:var(--dn)}
 .pchero.hv-kr .hart{height:240px;max-width:58%}
+.pcstrip{display:flex;flex-wrap:wrap;gap:6px 26px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 18px;margin-bottom:12px;box-shadow:var(--shadow)}
+.pcstrip .sessl{margin:0;padding:0}
+.tseg{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin:4px 0 12px}
+.tseg span{display:flex;flex-direction:column;align-items:center;font-size:11.5px;color:var(--sub);background:var(--soft);border-radius:8px;padding:5px 2px}
+.tseg span b{font-size:10.5px;font-weight:600;color:var(--mute)}
+.tseg span.on{background:var(--accBg);color:var(--accD);font-weight:800;outline:1.5px solid var(--acc)}
+.hmini{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.hmini div{background:var(--soft);border-radius:12px;padding:9px 10px;display:flex;flex-direction:column;gap:2px}
+.hmini span{font-size:11.5px;color:var(--mute)}.hmini b{font-family:Inter,"Pretendard Variable",sans-serif;font-size:15px;font-weight:800;color:var(--ink)}
+.hmini b.up{color:var(--up)}.hmini b.dn{color:var(--dn)}
+.hero .hmini span{color:var(--mute)!important}
+body:not([data-mt=dark]) .hero .hmini div{background:var(--soft)}
+body[data-mt=dark] .hero .hmini div,body:not(.pc) .hero .hmini div{background:rgba(255,255,255,.14)}
+body:not(.pc) .hero .hmini b,body[data-mt=dark] .hero .hmini b{color:#fff}
+.hmleg{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--mute);margin:6px 0 2px;max-width:420px}
+.hmleg i{flex:1;height:8px;border-radius:99px;background:linear-gradient(90deg,#2670E8,#9DBEF5,#F1F2F7,#F5A3AE,#E53950)}
 </style>
 </head>
 <body>
@@ -1242,7 +1258,8 @@ pcLayout=async function(v){const V=document.getElementById("view");
  await __pcL0(v);if(!isPC())return;
  {const nr=V.querySelector("#nightrow"),ib=V.querySelector(".ixb");if(nr&&ib&&!ib.contains(nr)){nr.style.display="contents";ib.appendChild(nr)}}
  const side=V.querySelector(".pcSide"),qc=V.querySelector("#pquick");if(v=="paper"&&side&&qc)side.prepend(qc);
- if(HERO[v]&&!V.querySelector(".pchero")){V.insertAdjacentHTML("afterbegin",heroHTML(v));if(v=="kr")heroKpi()}};
+ if(HERO[v]&&!V.querySelector(".pchero")){V.insertAdjacentHTML("afterbegin",heroHTML(v));if(v=="kr")heroKpi()}
+ if(v=="kr"||v=="us")pcPolish(V)};
 async function heroKpi(){const t=document.querySelector(".pchero .htx");if(!t)return;try{const [r,g]=await Promise.all([J("data/regime.json"),J("data/KR/global.json")]);const k=g.find(x=>x.symbol=="^KS11")||{},q=g.find(x=>x.symbol=="^KQ11")||{};
  const it=(a,b,c)=>`<div class="hk"><span>${a}</span><b>${b}</b>${c||""}</div>`;
  t.insertAdjacentHTML("beforeend",`<div class="hkpi">${it("코스피",fmt(k.close,2),pct(k.change_pct))}${it("코스닥",fmt(q.close,2),pct(q.change_pct))}${it("시장 국면",esc(r.state||"-"),`<small>현금 ${r.cash??"-"}%</small>`)}${it("외국인 5일",(r.foreign5>0?"+":"")+fmt(Math.round(r.foreign5||0))+"억",`<small>시장 순매수</small>`)}</div>`)}catch(e){}}
@@ -1257,6 +1274,15 @@ function wmark(){if(!ME||document.getElementById("wm"))return;const t=`GOAT STOC
  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="420" height="200"><text x="10" y="110" transform="rotate(-18 210 100)" font-family="sans-serif" font-size="14" fill="%23808080" fill-opacity="0.09">${t.replace(/[<>&"]/g,"")}</text></svg>`;
  const d=document.createElement("div");d.id="wm";d.setAttribute("aria-hidden","true");d.style.cssText=`position:fixed;inset:0;pointer-events:none;z-index:2147483000;background-image:url("data:image/svg+xml;utf8,${encodeURIComponent(svg).replace(/%2523/g,"%23")}");background-repeat:repeat`;document.body.appendChild(d)}
 function acctBtn(){if(document.getElementById("outBtn"))return;const b=document.createElement("button");b.id="outBtn";b.className="pill";b.style.cssText="height:32px;font-size:12px";b.textContent="로그아웃";b.title=ME?ME.mask:"";b.onclick=async()=>{try{await fetch("api/logout",{method:"POST"})}catch(e){}try{localStorage.clear()}catch(e){}location.replace("./")};const bd=document.getElementById("badge");if(bd)bd.after(b)}
+/* PC 시안 반영 2(GPT 실화면 재디자인): 정보 띠, 국면 카드 숫자 4칸, 온도 단계 띠, 지도 범례 */
+async function pcPolish(V){
+ const top=V.querySelector(".pcTop");if(top&&!top.querySelector(".pcstrip")){const ls=[...top.querySelectorAll(":scope > .sessl")];if(ls.length){const d=document.createElement("div");d.className="pcstrip";ls[0].before(d);ls.forEach(e=>d.appendChild(e))}}
+ const th=V.querySelector(".thermo");if(th&&!th.querySelector(".tseg")){const v=parseInt((th.querySelector(".tgv b")||{}).textContent)||0;const S=[[0,24,"얼어붙음"],[25,44,"차가움"],[45,54,"중립"],[55,74,"따뜻함"],[75,100,"과열"]];
+  const h=`<div class="tseg">${S.map(([a,b,t])=>`<span class="${v>=a&&v<=b?"on":""}"><b>${a}~${b}</b>${t}</span>`).join("")}</div>`;const g=th.querySelector(".tgv");if(g)g.insertAdjacentHTML("afterend",h)}
+ const hero=V.querySelector(".card.hero");if(hero&&!hero.querySelector(".hmini")&&VIEW=="kr"){try{const r=await J("data/regime.json");const gap=r.kospi&&r.ma20?(r.kospi/r.ma20-1)*100:null;
+  const box=(t,b,c)=>`<div><span>${t}</span><b class="${c||""}">${b}</b></div>`;
+  hero.insertAdjacentHTML("beforeend",`<div class="hmini">${box("20일선 이격",gap==null?"-":(gap>0?"+":"")+gap.toFixed(1)+"%",gap>0?"up":"dn")}${box("20일선",fmt(r.ma20,0))}${box("60일선",fmt(r.ma60,0))}${box("외국인 5일",(r.foreign5>0?"+":"")+fmt(Math.round(r.foreign5||0))+"억",r.foreign5>0?"up":"dn")}${box("20일선 위 종목",(r.breadth||0).toFixed(0)+"%")}${box("5일 · 20일",`${r.r5>0?"+":""}${(r.r5||0).toFixed(1)}% · ${r.r20>0?"+":""}${(r.r20||0).toFixed(1)}%`)}</div>`)}catch(e){}}
+ V.querySelectorAll(".hm").forEach(h=>{if(h.querySelector(".hmleg"))return;const g=h.querySelector(".hmg");if(g)g.insertAdjacentHTML("afterend",`<div class="hmleg"><span>-5% 이하</span><i></i><span>+5% 이상</span></div>`)})}
 function boot(){if(SERVER&&!ME){meLoad().then(m=>{if(m)boot()});return}PCLAST=isPC();pcShell();try{document.body.dataset.mt=localStorage.getItem("m_theme")||sysTheme()||"light"}catch(e){document.body.dataset.mt="light"}try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{const t=sysTheme();if(t){document.body.dataset.mt=t;paintTheme()}})}catch(e){}paintTheme();fsApply();if(gate()&&!deepLink()&&!viewLink()&&!/^#w=/.test(location.hash))go("kr");if(tGet()&&/^#w=/.test(location.hash))watchLink();if(tGet())setTimeout(()=>{tour();if(!document.getElementById("tour"))whatsNew()},1500);setTimeout(staleBanner,800);setInterval(staleBanner,600000);window.addEventListener("hashchange",()=>{if(tGet())deepLink()});setInterval(()=>{if(tGet())gate()},60000)}
 boot();
 </script>
