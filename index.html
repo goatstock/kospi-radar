@@ -182,6 +182,48 @@ body.pc:not([data-mt=dark]) nav button.on{background:none;color:var(--acc);box-s
 .pc .card>h3:first-child::before{content:"";position:absolute;left:0;top:.2em;width:14px;height:15px;background:linear-gradient(var(--acc),var(--acc)) 0 100%/3.5px 50% no-repeat,linear-gradient(var(--acc),var(--acc)) 5px 100%/3.5px 78% no-repeat,linear-gradient(var(--acc),var(--acc)) 10px 100%/3.5px 100% no-repeat}
 #pquick input{width:100%;box-sizing:border-box;height:44px;border:1px solid var(--line);border-radius:12px;padding:0 12px;font-size:15px;background:var(--soft);color:var(--ink);margin:6px 0}
 #pqbox .card{box-shadow:none;border:0;padding:10px 0 0;background:none}
+.pc .ixhint{display:none}
+.pc .ixb{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))!important;gap:10px}
+.pc .ixb .ixc{padding:14px 14px 12px;gap:3px}
+.pc .ixb .ixn{font-size:14px;font-weight:700;color:var(--ink)}
+.pc .ixb .ixv{font-size:24px}
+.pc .ixb .ixp{font-size:14px}
+.pc .ixb .ixs{font-size:11.5px;white-space:normal;line-height:1.4}
+.pc .ixb .night .ixs{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.pc .ixb .night .ixn small{display:none}
+.pc .ixb .night .ixn{color:rgba(255,255,255,.85)}
+body.pc:not([data-mt=dark]) .card.hero{background:var(--card);color:var(--ink);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:18px}
+body.pc:not([data-mt=dark]) .hero h3{color:var(--ink);font-weight:700;font-size:15px}
+body.pc:not([data-mt=dark]) .hero h3 span{background:var(--soft)!important;color:var(--sub)}
+body.pc:not([data-mt=dark]) .hero .hstate{color:var(--up);background:var(--upA);padding:12px 18px;border-radius:14px;font-size:26px}
+body.pc:not([data-mt=dark]) .hero .mu{color:var(--sub)}
+body.pc:not([data-mt=dark]) .hero .hcash{color:var(--acc);font-size:36px}
+body.pc:not([data-mt=dark]) .hero .bar{background:var(--soft)}
+body.pc:not([data-mt=dark]) .hero .bar i{background:var(--acc)}
+body.pc:not([data-mt=dark]) .hero div[style*="color:var(--sub)"]{color:var(--sub)!important}
+body.pc:not([data-mt=dark]) .hero div[style*="color:var(--mute)"]{color:var(--mute)!important}
+.fxwrap{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start}
+.fxside{display:flex;flex-direction:column;gap:12px}
+.fxside .fxcalc{margin:0;border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--card)}
+.fxgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+#fxbox2 .fxgrid{grid-template-columns:repeat(6,minmax(0,1fr))}
+.fxgrid .fxr,.fxgrid .fxr:first-of-type{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--card);margin:0}
+.fxgrid .fxr:hover{border-color:var(--warnBd);box-shadow:var(--shadow)}
+.fxgrid .fxh{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"fl nm" "v v" "sp sp";gap:6px 8px;align-items:center}
+.fxgrid .fxh .fl{grid-area:fl;width:30px;height:30px;border-radius:50%;background:var(--accBg);color:var(--accD);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.fxgrid .fxh .nm{grid-area:nm}
+.fxgrid .fxh .v{grid-area:v;flex-direction:row;align-items:baseline;justify-content:flex-start;gap:8px;text-align:left}
+.fxgrid .fxh .v b{font-size:22px}
+.fxgrid .fxh svg{grid-area:sp;width:100%;height:36px}
+.fxgrid .fxh svg *{vector-effect:non-scaling-stroke}
+.fxgrid .fxr.open{grid-column:1/-1}
+.tgauge,.tgv{display:none}
+.pc .thermo .tgauge{display:block;width:min(260px,90%);margin:4px auto 0}
+.pc .thermo .tgv{display:flex;flex-direction:column;align-items:center;margin:-46px 0 10px;position:relative}
+.pc .thermo .tgv b{font-family:Inter,sans-serif;font-size:34px;font-weight:800;color:var(--ink);background:var(--card);padding:0 10px;border-radius:10px}
+.pc .thermo .tgv span{font-size:14px;font-weight:700;color:var(--sub)}
+.pc .thermo .thb{display:none}
+.pc .thermo .rngs{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
 </style>
 </head>
 <body>
@@ -393,7 +435,7 @@ function idxBoard(g){setTimeout(()=>{usTick(true);rtTick()},150);setTimeout(()=>
  return `<div class="card ixc ixgo${(k?mktOpen():usOpen())?" stale":""}" role="button" tabindex="0" onclick="goMkt('${k?"kr":"us"}','${k=="KOSDAQ"?"코스닥":k=="KOSPI"?"코스피":s=="^IXIC"?"나스닥100":s=="^DJI"?"다우30":s=="^SOX"?"반도체":"전체"}')"${k?` data-rti="${k}"`:` data-rtui="${s}"`}><span class="ixn">${k?"🇰🇷 ":"🇺🇸 "}${esc(n)}</span><b class="ixv">${x.close==null?"-":Number(x.close).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</b><span class="ixp ${cl}">${c==null?"":(c>0?"▲ +":c<0?"▼ ":"")+Number(c).toFixed(2)+"%"}</span><span class="ixs">${k?(mktOpen()?"실시간 불러오는 중…":"종가"):(usOpen()?"실시간 불러오는 중…":"최근 종가")}</span></div>`}).join("")}</div>`}
 function idxRow(gl,nt){const g=k=>(gl||[]).find(x=>x.symbol==k)||{};const ks=g("^KS11"),kq=g("^KQ11");
  let h=idxBoard(g);
- if(isNight())h+=`<div class="ixrow" id="nightrow">${nightCards(NIGHT)}</div>`;
+ if(isNight())h=h.replace(/<\/div>$/,`<div id="nightrow" style="display:contents">${nightCards(NIGHT)}</div></div>`);
  return h}
 async function shareApp(){const url=location.origin+location.pathname;const d={title:"GOAT STOCK 3일 무료 체험",text:"코스피·미장 레이더 — 어젯밤 미장으로 본 오늘 시초가 예상, 종목별 매도경고까지. 3일 무료로 써 보세요.",url};
  try{if(navigator.share){await navigator.share(d);return}}catch(e){if(e&&e.name=="AbortError")return}
@@ -513,7 +555,7 @@ async function fxCard(){const el=document.getElementById("fxbox");if(!el)return;
  const sum=krw==null?"":`<div class="fxsum"><b>원화 ${krw>0.3?"강세":krw<-0.3?"약세":"보합"} · 주요 4개 통화 대비 1개월 ${krw>0?"+":""}${krw.toFixed(2)}%</b><span>달러·엔·유로·위안에 대한 원화 가치 평균입니다(1주 ${w==null?"-":(-w>0?"+":"")+(-w).toFixed(2)+"%"}). ${krw>0.3?"원화가 강해지는 구간은 외국인 매수가 들어오기 쉬워 대형주·금융·내수주에 우호적이고, 수출주는 환율 효과가 줄어듭니다.":krw<-0.3?"원화가 약해지는 구간은 수출주 이익엔 도움이 되지만 외국인 매도 압력이 커지는 경우가 많습니다.":"뚜렷한 방향이 없어 환율보다 업종·실적 요인이 더 중요합니다."}</span></div>`;
  const kr=FXL.filter(x=>F[x[0]]).map(x=>fxRow(F[x[0]],x[1],x[2],x[3]+" = 원",x[4],x[0]=="INRKRW=X"||x[0]=="TWDKRW=X"?2:x[0]=="CNYKRW=X"||x[0]=="HKDKRW=X"?2:2)).join("");
  const gl=FXG.filter(x=>F[x[0]]).map(x=>fxRow(F[x[0]],x[1],x[2],"달러 기준",x[3],x[4])).join("");
- el.innerHTML=`<h3>환율 · 원화 기준 <span class="mu" style="font-weight:400;font-size:12px">${esc(j.t)} 기준 · 누르면 상세</span></h3>${sum}${fxCalcBox(F)}${fxAlertBox()}${kr}`;if(_fa!=null&&$("#fxa"))$("#fxa").value=_fa;if(_fs&&$("#fxs"))$("#fxs").value=_fs;fxCalc();
+ el.innerHTML=`<h3>환율 · 원화 기준 <span class="mu" style="font-weight:400;font-size:12px">${esc(j.t)} 기준 · 누르면 상세</span></h3>${sum}${fxCalcBox(F)}${fxAlertBox()}${kr}`;if(_fa!=null&&$("#fxa"))$("#fxa").value=_fa;if(_fs&&$("#fxs"))$("#fxs").value=_fs;fxCalc();setTimeout(pcFx,0);
  const g2=document.getElementById("fxbox2");if(g2)g2.innerHTML=`<h3>세계 통화 · 달러 기준</h3>${gl}<div class="note" style="padding:8px 0 0">환율은 야후 파이낸스 기준이며 은행 고시 환율과 조금 다를 수 있습니다. 설명은 일반적인 경향이며 항상 맞지는 않습니다.</div>`;
  document.querySelectorAll(".fxr").forEach((x,i)=>{if(op.includes(i))x.classList.add("open")})}
 async function viewMacro(){
@@ -1046,7 +1088,7 @@ function thermo(r,gl,rows){const g=k=>(gl||[]).find(x=>x.symbol==k)||{};const P=
  if(r&&r.kospi&&r.ma20){const d=(r.kospi/r.ma20-1)*100;P.push(["코스피 20일선 "+(d>0?"+":"")+d.toFixed(1)+"%",Math.max(0,Math.min(100,50+d*10))])}
  if(r&&r.foreign5!=null){P.push(["외국인 5일 "+(r.foreign5>0?"+":"")+fmt(Math.round(r.foreign5))+"억",Math.max(0,Math.min(100,50+r.foreign5/400))])}
  if(P.length<2)return"";const v=Math.round(P.reduce((a,x)=>a+x[1],0)/P.length),lab=v>=75?"과열(탐욕)":v>=55?"따뜻함":v>=45?"중립":v>=25?"차가움":"얼어붙음(공포)";
- return `<div class="card thermo"><h3>🌡 시장 온도 <b class="${v>=55?"up":v<45?"dn":""}">${v}° · ${lab}</b> <span class="mu" style="font-size:12px;font-weight:500">참고용 단순 평균</span></h3><div class="thb"><i style="left:${v}%"></i></div><div class="rngs">${P.map(([t,x])=>`<span>${esc(t)} → <b>${Math.round(x)}</b></span>`).join("")}</div><div class="note">0=공포, 100=탐욕. 네 가지를 0~100으로 바꿔 평균했습니다. 매매 신호가 아닙니다.</div></div>`}
+ return `<div class="card thermo"><h3>🌡 시장 온도 <b class="${v>=55?"up":v<45?"dn":""}">${v}° · ${lab}</b> <span class="mu" style="font-size:12px;font-weight:500">참고용 단순 평균</span></h3><div class="thb"><i style="left:${v}%"></i></div>${(()=>{const a=Math.PI*(1-v/100),x=(100+64*Math.cos(a)).toFixed(1),y=(100-64*Math.sin(a)).toFixed(1);return `<svg class="tgauge" viewBox="0 0 200 128" aria-hidden="true"><defs><linearGradient id="tgg" x1="0" x2="1"><stop offset="0" stop-color="#2670E8"/><stop offset=".5" stop-color="#A23CFF"/><stop offset="1" stop-color="#E53950"/></linearGradient></defs><path d="M20 100 A80 80 0 0 1 180 100" fill="none" stroke="url(#tgg)" stroke-width="16" stroke-linecap="round"/><line x1="100" y1="100" x2="${x}" y2="${y}" stroke="var(--ink)" stroke-width="4" stroke-linecap="round"/><circle cx="100" cy="100" r="6" fill="var(--ink)"/><text x="20" y="124" text-anchor="middle" font-size="11" fill="var(--mute)">0 공포</text><text x="180" y="124" text-anchor="middle" font-size="11" fill="var(--mute)">탐욕 100</text></svg><div class="tgv"><b>${v}°</b><span>${lab}</span></div>`})()}<div class="rngs">${P.map(([t,x])=>`<span>${esc(t)} → <b>${Math.round(x)}</b></span>`).join("")}</div><div class="note">0=공포, 100=탐욕. 네 가지를 0~100으로 바꿔 평균했습니다. 매매 신호가 아닙니다.</div></div>`}
 /* 제76회 자료 출처·갱신 시각 */
 async function aboutCard(){let mt={};try{mt=await J0("data/meta.json")}catch(e){}return `<details class="card glc"><summary><h3 style="display:inline">ℹ️ 자료 출처·갱신 <span class="mu" style="font-size:12px;font-weight:500">앱 ${esc(APPV)}</span></h3></summary><div class="gl"><b>국내 시세·수급·뉴스</b><span>네이버 증권 공개 자료를 레이더 PC가 매일 장마감 뒤 모아 분석 · 마지막 분석 ${esc((mt.KR||{}).asof||"-")} (${esc(mt.made||"-")} 생성)</span></div><div class="gl"><b>미국 시세·지수·환율</b><span>야후 파이낸스 공개 자료 · 미국 ${esc((mt.US||{}).asof||"-")} 마감 분석</span></div><div class="gl"><b>장중 실시간</b><span>중계 서버가 1분 단위로 받아 전달(지연될 수 있음)</span></div><div class="gl"><b>해외 속보 번역</b><span>해외 매체 RSS 제목을 AI로 번역(원문 함께 표시)</span></div><div class="gl"><b>내 관심종목·메모·모의투자</b><span>이 휴대폰 브라우저에만 저장, 서버로 보내지 않음</span></div></details>`}
 /* 제77회 문제 신고용 진단 내용 복사 */
@@ -1173,9 +1215,14 @@ const __pcL0=pcLayout;
 pcLayout=async function(v){const V=document.getElementById("view");
  if(v=="paper"&&!V.querySelector("#pquick")){const cards=[...V.querySelectorAll(":scope > .card")];const hold=cards.find(e=>/보유 종목/.test(h3t(e)));const at=hold||cards[0];if(at){at.insertAdjacentHTML("afterend",quickCard(PMKT));quickWire(PMKT)}}
  await __pcL0(v);if(!isPC())return;
+ {const nr=V.querySelector("#nightrow"),ib=V.querySelector(".ixb");if(nr&&ib&&!ib.contains(nr)){nr.style.display="contents";ib.appendChild(nr)}}
  const side=V.querySelector(".pcSide"),qc=V.querySelector("#pquick");if(v=="paper"&&side&&qc)side.prepend(qc);
  if(HERO[v]&&!V.querySelector(".pchero"))V.insertAdjacentHTML("afterbegin",heroHTML(v))};
-function boot(){PCLAST=isPC();pcShell();try{document.body.dataset.mt=localStorage.getItem("m_theme")||(isPC()?"light":sysTheme())||"light"}catch(e){document.body.dataset.mt="light"}try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{const t=sysTheme();if(t){document.body.dataset.mt=t;paintTheme()}})}catch(e){}paintTheme();fsApply();if(gate()&&!deepLink()&&!viewLink()&&!/^#w=/.test(location.hash))go("kr");if(tGet()&&/^#w=/.test(location.hash))watchLink();if(tGet())setTimeout(()=>{tour();if(!document.getElementById("tour"))whatsNew()},1500);setTimeout(staleBanner,800);setInterval(staleBanner,600000);window.addEventListener("hashchange",()=>{if(tGet())deepLink()});setInterval(()=>{if(tGet())gate()},60000)}
+/* PC: 환율을 4칸 카드 격자로(시안 4) */
+function pcFx(){if(!isPC())return;const tile=box=>{if(!box||box.querySelector(".fxgrid"))return;const rs=[...box.querySelectorAll(":scope > .fxr")];if(!rs.length)return;const g=document.createElement("div");g.className="fxgrid";rs[0].before(g);rs.forEach(r=>{const sv=r.querySelector(".fxh svg");if(sv)sv.setAttribute("preserveAspectRatio","none");g.appendChild(r)})};
+ const b=document.getElementById("fxbox");tile(b);tile(document.getElementById("fxbox2"));
+ if(b&&!b.querySelector(".fxwrap")){const cs=[...b.querySelectorAll(":scope > .fxcalc")],g=b.querySelector(".fxgrid");if(cs.length&&g){const w=document.createElement("div");w.className="fxwrap";g.before(w);const sd=document.createElement("div");sd.className="fxside";cs.forEach(c=>sd.appendChild(c));w.append(g,sd)}}}
+function boot(){PCLAST=isPC();pcShell();try{document.body.dataset.mt=localStorage.getItem("m_theme")||sysTheme()||"light"}catch(e){document.body.dataset.mt="light"}try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{const t=sysTheme();if(t){document.body.dataset.mt=t;paintTheme()}})}catch(e){}paintTheme();fsApply();if(gate()&&!deepLink()&&!viewLink()&&!/^#w=/.test(location.hash))go("kr");if(tGet()&&/^#w=/.test(location.hash))watchLink();if(tGet())setTimeout(()=>{tour();if(!document.getElementById("tour"))whatsNew()},1500);setTimeout(staleBanner,800);setInterval(staleBanner,600000);window.addEventListener("hashchange",()=>{if(tGet())deepLink()});setInterval(()=>{if(tGet())gate()},60000)}
 boot();
 </script>
 </body>
