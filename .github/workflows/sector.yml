@@ -1,0 +1,27 @@
+name: 업종 지도 갱신
+on:
+  schedule:
+    - cron: "5,35 0-6 * * 1-5"
+    - cron: "40 7 * * 1-5"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["tools/lab/sector.py", ".github/workflows/sector.yml"]
+permissions:
+  id-token: write
+  contents: read
+concurrency: { group: sector, cancel-in-progress: true }
+jobs:
+  sector:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python tools/lab/sector.py
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node tools/deploy/upload.js
+        env:
+          FILES: static/sector_kr.json
