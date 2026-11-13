@@ -158,6 +158,22 @@ export default {
         return J({ ok: true }, 200, { "set-cookie": SC(tok, 30 * 86400) });
       }
       if (p === "/api/logout" && req.method === "POST") { const t = cookie(req, "gs"); if (t) await env.DB.prepare("DELETE FROM s WHERE tok=?").bind(await sha(t)).run(); return J({ ok: true }, 200, { "set-cookie": SC("x", 0) }); }
+      if (p === "/api/vote") {  // 11-14: '다음 장 코스피 오를까?' 투표(회원당 하루 1표, 결과는 집계만)
+        const me = await user(req, env); if (!me || !active(me)) return J({ ok: false, msg: "로그인한 회원만 투표할 수 있습니다" }, 401);
+        await env.DB.prepare("CREATE TABLE IF NOT EXISTS vt(day TEXT, uid INTEGER, v INTEGER, at INTEGER, PRIMARY KEY(day,uid))").run();
+        const k = new Date(now() + 9 * 3600000); let d = new Date(Date.UTC(k.getUTCFullYear(), k.getUTCMonth(), k.getUTCDate()));
+        if (k.getUTCHours() * 60 + k.getUTCMinutes() >= 15 * 60 + 30) d = new Date(d.getTime() + DAY);
+        while (d.getUTCDay() === 0 || d.getUTCDay() === 6) d = new Date(d.getTime() + DAY);
+        const day = d.toISOString().slice(0, 10), open = k.toISOString().slice(0, 10) === day && k.getUTCHours() * 60 + k.getUTCMinutes() >= 9 * 60;
+        if (req.method === "POST") {
+          if (open) return J({ ok: false, msg: "장이 열린 뒤에는 투표할 수 없습니다(다음 장 투표는 15:30 뒤에 열립니다)" }, 400);
+          const b = await req.json().catch(() => ({})); const v = b.v === "up" ? 1 : b.v === "dn" ? -1 : 0; if (!v) return J({ ok: false }, 400);
+          await env.DB.prepare("INSERT INTO vt(day,uid,v,at) VALUES(?,?,?,?) ON CONFLICT(day,uid) DO UPDATE SET v=excluded.v,at=excluded.at").bind(day, me.id, v, now()).run();
+        }
+        const c = await env.DB.prepare("SELECT SUM(v=1) up, SUM(v=-1) dn FROM vt WHERE day=?").bind(day).first();
+        const mine = await env.DB.prepare("SELECT v FROM vt WHERE day=? AND uid=?").bind(day, me.id).first();
+        return J({ ok: true, day, open, up: c.up || 0, dn: c.dn || 0, mine: mine ? mine.v : 0 });
+      }
       if (p.startsWith("/api/chat")) {  // 11-14 회장님 지시 채팅(시안): 로그인·이용 중 회원만, 투자 권유·홍보·연락처 차단, 신고 3번이면 숨김, 7일 보관
         const me = await user(req, env); if (!me || !active(me)) return J({ ok: false, msg: "로그인한 회원만 쓸 수 있습니다" }, 401);
         await env.DB.prepare("CREATE TABLE IF NOT EXISTS c(id INTEGER PRIMARY KEY AUTOINCREMENT, uid INTEGER, nick TEXT, txt TEXT, at INTEGER, rep INTEGER DEFAULT 0, hid INTEGER DEFAULT 0)").run();
