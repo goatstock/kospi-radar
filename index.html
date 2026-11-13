@@ -249,6 +249,27 @@ body[data-mt=dark] .hero .hmini div,body:not(.pc) .hero .hmini div{background:rg
 body:not(.pc) .hero .hmini b,body[data-mt=dark] .hero .hmini b{color:#fff}
 .hmleg{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--mute);margin:6px 0 2px;max-width:420px}
 .hmleg i{flex:1;height:8px;border-radius:99px;background:linear-gradient(90deg,#2670E8,#9DBEF5,#F1F2F7,#F5A3AE,#E53950)}
+.pc .pchero{background-size:200% 100%,100% 100%!important;animation:hbg 14s ease-in-out infinite alternate}
+@keyframes hbg{from{background-position:0 0,0 0}to{background-position:100% 0,0 0}}
+.hart .cdl{animation:cdup .7s cubic-bezier(.2,.8,.2,1.1) both}
+@keyframes cdup{from{transform:scaleY(0);opacity:0}to{transform:scaleY(1);opacity:1}}
+.hart .hline{stroke-dasharray:1;stroke-dashoffset:1;animation:hdraw 1.8s .4s ease-out forwards}
+@keyframes hdraw{to{stroke-dashoffset:0}}
+.hart .hpulse{transform-origin:503px 50px;transform-box:view-box;animation:hpls 1.8s 2s ease-out infinite both}
+@keyframes hpls{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.4);opacity:0}}
+.hart .hdotp{opacity:0;animation:hfade .3s 2s forwards}@keyframes hfade{to{opacity:1}}
+.hart .hmt{animation:hfloat 7s ease-in-out infinite alternate}@keyframes hfloat{to{transform:translateX(-14px)}}
+.pchero .htx>*{animation:hin .6s both}.pchero .htx>*:nth-child(2){animation-delay:.08s}.pchero .htx>*:nth-child(3){animation-delay:.16s}.pchero .htx>*:nth-child(4){animation-delay:.24s}
+@keyframes hin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.hk{transition:transform .15s,box-shadow .15s}.hk:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(112,72,255,.15)}
+.pc .pchero{padding-bottom:0;flex-wrap:wrap}
+.htick{position:absolute;left:0;right:0;bottom:0;height:34px;overflow:hidden;background:color-mix(in srgb,var(--card) 72%,transparent);backdrop-filter:blur(6px);border-top:1px solid var(--line);z-index:2;-webkit-mask:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.htr{display:flex;gap:34px;white-space:nowrap;width:max-content;height:34px;align-items:center;animation:htk 48s linear infinite}
+.htick:hover .htr{animation-play-state:paused}
+.htr span{font-size:13px;color:var(--sub);font-family:Inter,"Pretendard Variable",sans-serif}.htr b{color:var(--ink);font-weight:800;margin-right:4px}.htr i{font-style:normal;font-weight:800}.htr i.up{color:var(--up)}.htr i.dn{color:var(--dn)}
+@keyframes htk{to{transform:translateX(-50%)}}
+.pchero.hv-kr{padding-bottom:34px}
+@media (prefers-reduced-motion: reduce){.pchero,.pchero *{animation:none!important}.hart .hline{stroke-dashoffset:0}.hart .hdotp{opacity:1}}
 </style>
 </head>
 <body>
@@ -1233,9 +1254,9 @@ function landing(){return `<div class="lnd">
 /* PC 흰바탕 시안 적용(2026-11-13) + 빠른 모의 주문 */
 const HERO={kr:["국내 시장 대시보드","지수·수급·종목 흐름을 한눈에."],us:["미국 주식 시장","미국 주요 지수·섹터·종목 흐름을 한눈에."],macro:["세계 지표","환율·금리·원자재·주요 지수와 경제 일정을 한눈에."],news:["해외 속보","세계 시장에 영향을 주는 뉴스와 이슈를 빠르게."],paper:["모의투자","가상 돈으로 전략을 연습하고 성과를 기록해 보세요.","가상 투자 · 실제 주문 아님"],score:["성적표","우리의 예측과 판단을 그대로 공개합니다. 좋은 날도, 틀린 날도 숨기지 않습니다."]};
 function heroArt(v){const C=[[300,96,108],[318,92,104],[336,98,88],[354,84,94],[372,90,78],[390,74,86],[408,80,70],[426,66,76],[444,70,58],[462,54,64],[480,58,44],[498,40,50]];
- const cand=C.map(([x,o,c],i)=>{const up=c<o,t=Math.min(o,c),h=Math.max(4,Math.abs(o-c));return `<line x1="${x+5}" y1="${t-8}" x2="${x+5}" y2="${t+h+8}" stroke="var(--acc)" stroke-opacity=".45" stroke-width="1.5"/><rect x="${x}" y="${t}" width="10" height="${h}" rx="2" fill="${up?"var(--acc2)":"var(--acc)"}" fill-opacity="${up?.75:.35}"/>`}).join("");
- const line=`<polyline points="${C.map(([x,,c])=>(x+5)+","+c).join(" ")}" fill="none" stroke="url(#hl)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="503" cy="50" r="5" fill="var(--acc2)"/><circle cx="503" cy="50" r="11" fill="var(--acc2)" fill-opacity=".2"/>`;
- const mt=`<path d="M0 150 L50 112 L95 128 L165 82 L235 120 L290 98 L360 124 L430 92 L520 118 L520 150Z" fill="url(#hm)"/>`;
+ const cand=C.map(([x,o,c],i)=>{const up=c<o,t=Math.min(o,c),h=Math.max(4,Math.abs(o-c));return `<g class="cdl" style="animation-delay:${(.15+i*.09).toFixed(2)}s;transform-origin:${x+5}px 150px"><line x1="${x+5}" y1="${t-8}" x2="${x+5}" y2="${t+h+8}" stroke="var(--acc)" stroke-opacity=".45" stroke-width="1.5"/><rect x="${x}" y="${t}" width="10" height="${h}" rx="2" fill="${up?"var(--acc2)":"var(--acc)"}" fill-opacity="${up?.75:.35}"/></g>`}).join("");
+ const line=`<polyline points="${C.map(([x,,c])=>(x+5)+","+c).join(" ")}" class="hline" pathLength="1" fill="none" stroke="url(#hl)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle class="hpulse" cx="503" cy="50" r="11" fill="var(--acc2)" fill-opacity=".25"/><circle class="hdotp" cx="503" cy="50" r="5" fill="var(--acc2)"/>`;
+ const mt=`<path class="hmt" d="M0 150 L50 112 L95 128 L165 82 L235 120 L290 98 L360 124 L430 92 L520 118 L520 150Z" fill="url(#hm)"/>`;
  const ob={kr:`<g fill="var(--acc)" fill-opacity=".55"><rect x="128" y="104" width="96" height="30" rx="2"/><rect x="140" y="100" width="72" height="6" fill-opacity=".3"/><path d="M112 102 Q176 84 240 102 L232 108 Q176 94 120 108Z"/><path d="M138 86 Q176 72 214 86 L208 92 Q176 82 144 92Z"/><rect x="152" y="92" width="48" height="10" fill-opacity=".4"/><rect x="166" y="114" width="20" height="20" fill="var(--card)" fill-opacity=".9"/></g><g fill="var(--acc)" fill-opacity=".5"><rect x="262" y="58" width="5" height="76"/><path d="M256 74 h17 l-3 9 h-11Z"/><rect x="263.5" y="40" width="2" height="20"/></g>`,
  us:`<g fill="var(--acc)" fill-opacity=".45">${[[110,70,22],[136,48,18],[158,88,26],[188,36,20],[212,64,24],[240,96,18]].map(([x,y,w])=>`<rect x="${x}" y="${y}" width="${w}" height="${150-y}" rx="2"/>`).join("")}</g><g fill="var(--card)" fill-opacity=".7">${Array.from({length:18},(_,i)=>`<rect x="${140+(i%3)*5}" y="${56+Math.floor(i/3)*12}" width="3" height="5"/>`).join("")}</g>`,
  macro:`<g fill="none" stroke="var(--acc)" stroke-opacity=".5" stroke-width="2"><circle cx="190" cy="80" r="52" fill="var(--accBg)" fill-opacity=".8"/><ellipse cx="190" cy="80" rx="22" ry="52"/><ellipse cx="190" cy="80" rx="42" ry="52"/><path d="M138 80 H242 M146 54 H234 M146 106 H234"/></g>`,
@@ -1262,7 +1283,13 @@ pcLayout=async function(v){const V=document.getElementById("view");
  if(v=="kr"||v=="us")pcPolish(V)};
 async function heroKpi(){const t=document.querySelector(".pchero .htx");if(!t)return;try{const [r,g]=await Promise.all([J("data/regime.json"),J("data/KR/global.json")]);const k=g.find(x=>x.symbol=="^KS11")||{},q=g.find(x=>x.symbol=="^KQ11")||{};
  const it=(a,b,c)=>`<div class="hk"><span>${a}</span><b>${b}</b>${c||""}</div>`;
- t.insertAdjacentHTML("beforeend",`<div class="hkpi">${it("코스피",fmt(k.close,2),pct(k.change_pct))}${it("코스닥",fmt(q.close,2),pct(q.change_pct))}${it("시장 국면",esc(r.state||"-"),`<small>현금 ${r.cash??"-"}%</small>`)}${it("외국인 5일",(r.foreign5>0?"+":"")+fmt(Math.round(r.foreign5||0))+"억",`<small>시장 순매수</small>`)}</div>`)}catch(e){}}
+ heroTicker(g);heroClock();t.insertAdjacentHTML("beforeend",`<div class="hkpi">${it("코스피",fmt(k.close,2),pct(k.change_pct))}${it("코스닥",fmt(q.close,2),pct(q.change_pct))}${it("시장 국면",esc(r.state||"-"),`<small>현금 ${r.cash??"-"}%</small>`)}${it("외국인 5일",(r.foreign5>0?"+":"")+fmt(Math.round(r.foreign5||0))+"억",`<small>시장 순매수</small>`)}</div>`);countUp(t)}catch(e){}}
+function heroTicker(g){const H=document.querySelector(".pchero");if(!H||H.querySelector(".htick"))return;const W=[["^KS11","코스피"],["^KQ11","코스닥"],["^GSPC","S&P500"],["^IXIC","나스닥"],["^DJI","다우"],["^SOX","반도체"],["^VIX","VIX"],["KRW=X","원/달러"],["JPY=X","엔/달러"],["CL=F","WTI"],["GC=F","금"],["^TNX","美10년"],["BTC-USD","비트코인"],["^N225","닛케이"],["000001.SS","상해"]];
+ const it=W.map(([s,n])=>{const x=g.find(y=>y.symbol==s);if(!x||x.close==null)return"";const c=x.change_pct||0;return `<span><b>${n}</b> ${Number(x.close).toLocaleString("en-US",{maximumFractionDigits:2})} <i class="${c>0?"up":c<0?"dn":""}">${c>0?"▲":c<0?"▼":""}${Math.abs(c).toFixed(2)}%</i></span>`}).join("");
+ if(!it)return;H.insertAdjacentHTML("beforeend",`<div class="htick" aria-label="주요 지표 흐름"><div class="htr">${it}${it}</div></div>`)}
+function heroClock(){if(window.__hck)return;window.__hck=setInterval(()=>{const e=document.querySelector(".hstat b");if(!e){clearInterval(window.__hck);window.__hck=0;return}const d=new Date(Date.now()+9*3600e3),p=n=>String(n).padStart(2,"0");e.textContent=`${d.getUTCMonth()+1}/${d.getUTCDate()}(${"일월화수목금토"[d.getUTCDay()]}) ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`},1000)}
+function countUp(root){if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;root.querySelectorAll(".hk b").forEach(b=>{const t=b.textContent,m=t.match(/^([+\-]?)([\d,]+(?:\.\d+)?)(.*)$/);if(!m)return;const v=parseFloat(m[2].replace(/,/g,"")),dg=(m[2].split(".")[1]||"").length,t0=performance.now(),D=900;
+ const f=n=>{const k=Math.min(1,(n-t0)/D),e=1-Math.pow(1-k,3);b.textContent=m[1]+(v*e).toLocaleString("en-US",{minimumFractionDigits:dg,maximumFractionDigits:dg})+m[3];if(k<1)requestAnimationFrame(f)};requestAnimationFrame(f)})}
 /* PC: 환율을 4칸 카드 격자로(시안 4) */
 function pcFx(){if(!isPC())return;const tile=box=>{if(!box||box.querySelector(".fxgrid"))return;const rs=[...box.querySelectorAll(":scope > .fxr")];if(!rs.length)return;const g=document.createElement("div");g.className="fxgrid";rs[0].before(g);rs.forEach(r=>{const sv=r.querySelector(".fxh svg");if(sv)sv.setAttribute("preserveAspectRatio","none");g.appendChild(r)})};
  const b=document.getElementById("fxbox");tile(b);tile(document.getElementById("fxbox2"));
