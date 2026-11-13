@@ -39,8 +39,8 @@ const R=[];const ok=(n,c,msg)=>R.push([n,!!c,msg||'']);
  await pg.click('button[aria-label="글자 크기 바꾸기"]');ok('제17회 글자 110%',await pg.evaluate(()=>document.body.style.zoom=='1.1'));
  await pg.click('button[aria-label="글자 크기 바꾸기"]');await pg.click('button[aria-label="글자 크기 바꾸기"]');ok('제17회 120% 다음 기본으로',await pg.evaluate(()=>document.body.style.zoom==''));
  // 18 brief
- await pg.evaluate(()=>go('kr'));await pg.waitForTimeout(3000);const bf=await pg.evaluate(async()=>{const t=(document.querySelector('.brief')||{}).innerText||'';const ix=await J('data/KR/index.json');return{t,b:ix.rows.filter(x=>x[3]=='매수후보').length,w:ix.rows.filter(x=>x[3]=='매도경고').length}});
- ok('제18회 오늘의 요약 숫자 맞음',bf.t.includes(`매수후보 ${bf.b}개`)&&bf.t.includes(`매도경고 ${bf.w}개`)&&bf.t.includes('시장 국면'),bf.t.slice(0,200));
+ await pg.evaluate(()=>go('kr'));await pg.waitForTimeout(3000);const bf=await pg.evaluate(async()=>{const t=(document.querySelector('.brief')||{}).innerText||'';const ix=await J('data/KR/index.json');return{t,b:ix.rows.filter(x=>x[3]=='추세 강세').length,w:ix.rows.filter(x=>x[3]=='추세 약세').length}});
+ ok('제18회 오늘의 요약 숫자 맞음',bf.t.includes(`추세 강세 ${bf.b}개`)&&bf.t.includes(`추세 약세 ${bf.w}개`)&&bf.t.includes('시장 국면'),bf.t.slice(0,200));
  // 19 backup/restore
  const code=await pg.evaluate(()=>{LS.s('goat_memo',{'KR:005930':'메모A'});return bkCode()});
  const pg2=await page(T);const rs=await pg2.evaluate(c=>{const a=bkRestore(c);return[a,wList().length,LS.g('goat_memo',{})['KR:005930']]},code);ok('제19회 백업 코드로 새 기기 복원',rs[0]&&rs[1]==1&&rs[2]=='메모A',JSON.stringify(rs));
