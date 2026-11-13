@@ -1,0 +1,25 @@
+name: 미국 분봉 수집(장 마감 뒤)
+on:
+  schedule:
+    - cron: "20 21 * * 1-5"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["tools/lab/us_minute.py", ".github/workflows/usmin.yml"]
+permissions:
+  id-token: write
+  contents: read
+concurrency: { group: usmin, cancel-in-progress: true }
+jobs:
+  usmin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python tools/lab/us_minute.py
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: echo "FILES=$(ls data/live_us/*.json | paste -sd, -)" >> $GITHUB_ENV
+      - run: node tools/deploy/upload.js
