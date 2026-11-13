@@ -24,6 +24,9 @@ df = pd.DataFrame(L, columns=["code", "date", "open", "high", "low", "close", "v
 for c in ["open", "high", "low", "close", "volume", "frgn_rate"]: df[c] = pd.to_numeric(df[c], errors="coerce")
 df["date"] = pd.to_datetime(df["date"].astype(str), format="%Y%m%d", errors="coerce")
 df = df.dropna(subset=["date", "close", "open"]).query("close>0 and open>0").sort_values(["code", "date"]).reset_index(drop=True)
+fl = pd.read_csv("flowcache/kr_flow_10y.csv.gz", dtype={"code": str, "date": str}); fl["date"] = pd.to_datetime(fl["date"], format="%Y%m%d", errors="coerce")
+df = df.merge(fl.dropna(subset=["date"]).drop_duplicates(["code", "date"]), on=["code", "date"], how="left")
+print("수급 연결률", round(df["frgn"].notna().mean() * 100, 1), "%", flush=True)
 kj = get(f"https://api.stock.naver.com/chart/domestic/index/KOSPI/day?startDateTime={S}&endDateTime={E}") or []
 k = pd.Series([float(x["closePrice"]) for x in kj], index=pd.to_datetime([str(x["localDate"]) for x in kj], format="%Y%m%d")).sort_index()
 kf = pd.DataFrame({"k_r20": k.pct_change(20), "k_r60": k.pct_change(60), "k_ma60": k / k.rolling(60).mean() - 1, "k_r5": k.pct_change(5)})
@@ -44,6 +47,13 @@ F["hi52"] = c / g["high"].transform(lambda s: s.rolling(250).max()) - 1
 F["lo52"] = c / g["low"].transform(lambda s: s.rolling(250).min()) - 1
 F["gap"] = o / g["close"].shift(1) - 1; F["rng"] = (h - l) / c; F["body"] = (c - o) / o
 fr = df["frgn_rate"]; F["fr5"] = fr - fr.groupby(gc).shift(5); F["fr20"] = fr - fr.groupby(gc).shift(20)
+vs5 = g["volume"].transform(lambda s: s.rolling(5).sum()).astype(float) + 1; vs20 = g["volume"].transform(lambda s: s.rolling(20).sum()).astype(float) + 1
+for col, nm in [("frgn", "f"), ("inst", "i")]:
+    x = df[col].fillna(0)
+    F[nm + "n5"] = x.groupby(gc).transform(lambda s: s.rolling(5).sum()) / vs5
+    F[nm + "n20"] = x.groupby(gc).transform(lambda s: s.rolling(20).sum()) / vs20
+    F[nm + "d5"] = (x > 0).astype(float).groupby(gc).transform(lambda s: s.rolling(5).sum())
+F["fin5"] = F["fn5"] + F["in5"]
 F = F.join(df[["date"]]).merge(kf, left_on="date", right_index=True, how="left").drop(columns="date"); F.index = df.index
 F["rs20"] = F["r20"] - F["k_r20"]; F["rs60"] = F["r60"] - F["k_r60"]
 X = F.replace([np.inf, -np.inf], np.nan)
@@ -57,8 +67,9 @@ m.fit(X[tr], df.loc[tr, "yx"])
 d = df[te].copy(); d["p"] = m.predict(X[te]); d["liq"] = liq[te]
 d["pct"] = d["p"].rank(pct=True)
 d = d.sort_values("p", ascending=False)
-out = {"date": str(last.date()), "made": (datetime.datetime.utcnow() + datetime.timedelta(hours=9)).strftime("%Y-%m-%d %H:%M"), "model": "lgb-10y-v1", "n": int(len(d)),
-       "note": "AI 상대 순위(시험): 다음 5거래일 동안 시장 평균보다 나을 가능성의 순위. 2019~2026 처음 보는 해 검증에서 상위 10%가 시장보다 매년 나았지만, 비용 뺀 절대수익은 해마다 달랐음. 매수 추천이 아님.",
+out = {"date": str(last.date()), "made": (datetime.datetime.utcnow() + datetime.timedelta(hours=9)).strftime("%Y-%m-%d %H:%M"), "model": "lgb-10y-flow-v2", "n": int(len(d)),
+       "note": "AI 상대 순위(시험, 외국인·기관 수급 포함): 다음 5거래일 동안 시장 평균보다 나을 가능성의 순위. 2019~2026 처음 보는 해 검증에서 상위 10%가 시장보다 매년 나았지만, 비용 뺀 절대수익은 해마다 달랐음. 매수 추천이 아님.",
+       "val": {"period": "2019~2026 각 해를 처음 보는 해로 두고 그 전 해들로만 학습(8번)", "rule": "5거래일마다 상위 10종목, 다음날 시가→5거래일 뒤 종가, 비용 0.25%, 거래대금 5억 이상", "years": [[2019, 1.15, 0.73], [2020, 0.82, 1.19], [2021, 0.36, 0.38], [2022, 0.97, 0.38], [2023, 1.42, 1.59], [2024, 0.74, 0.32], [2025, 1.38, 1.80], [2026, 1.02, 0.90]], "prev": [[2019, 1.53], [2020, 0.93], [2021, 0.31], [2022, 0.17], [2023, 1.43], [2024, 1.24], [2025, 1.25], [2026, 0.19]], "limits": "상장폐지 종목 빠짐(생존 편향, 다음 주 재검증) · 백테스트이며 실거래 아님 · 2019·2024년은 수급을 넣기 전보다 낮음"},
        "rows": [[r.code, names.get(r.code, ""), round(float(r.pct) * 100, 1), round(float(r.p) * 100, 2), bool(r.liq)] for r in d.itertuples()]}
 os.makedirs("static", exist_ok=True)
 json.dump(out, open("static/rank_kr.json", "w", encoding="utf-8"), ensure_ascii=False)

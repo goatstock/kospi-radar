@@ -5,20 +5,31 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["tools/lab/rank_daily.py"]
+    paths: ["tools/lab/rank_daily.py", "tools/lab/flow_update.py", ".github/workflows/rank.yml"]
 permissions:
   id-token: write
   contents: read
+  actions: read
 concurrency: { group: rank, cancel-in-progress: true }
 jobs:
   rank:
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: pip install -q lightgbm pandas numpy scikit-learn
+      - id: fc
+        uses: actions/cache/restore@v4
+        with: { path: flowcache, key: "flow-v1-${{ github.run_id }}", restore-keys: "flow-v1-" }
+      - if: steps.fc.outputs.cache-matched-key == ''
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with: { name: flow10y, path: flowcache, run-id: 43411737285, github-token: "${{ secrets.GITHUB_TOKEN }}" }
+      - run: python tools/lab/flow_update.py
+      - uses: actions/cache/save@v4
+        with: { path: flowcache, key: "flow-v1-${{ github.run_id }}" }
       - run: python tools/lab/rank_daily.py
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
