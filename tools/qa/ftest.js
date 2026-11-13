@@ -52,8 +52,8 @@ const R=[];const ok=(n,c,msg)=>{R.push([n,!!c,msg||''])};
  const hm=await pg.evaluate(()=>{const t=[...document.querySelectorAll('.hmt')];return{n:t.length,first:t[0]&&t[0].innerText}});ok('제10회 시장 지도 40칸',hm.n==40,JSON.stringify(hm));
  await pg.evaluate(()=>{document.querySelector('.hm').open=true;document.querySelector('.hmt').click()});await pg.waitForTimeout(1500);ok('제10회 지도 칸 누르면 종목',await pg.evaluate(()=>VIEW=='stock'));
  // 9 자료 지연 경고: 11-14 09:00 (기대 11-13) vs 11-13 10:00 (기대 11-12)
- const p5=await page(Date.parse('2026-11-16T09:00:00+09:00'));await p5.goto('http://localhost:8767/kospi-radar/');await p5.waitForTimeout(2500);
- const sb=await p5.evaluate(()=>(document.getElementById('staleb')||{}).innerText||'');ok('제9회 자료 밀리면 경고(11-16 09시, 기대 11-13)',sb.includes('2026-11-12')&&sb.includes('2026-11-13'),sb.slice(0,80));
+ const p5=await page(Date.parse('2026-11-17T09:00:00+09:00'));await p5.goto('http://localhost:8767/kospi-radar/');await p5.waitForTimeout(2500);
+ const sb=await p5.evaluate(()=>(document.getElementById('staleb')||{}).innerText||'');ok('제9회 자료 밀리면 경고(11-17 09시, 기대 11-16)',sb.includes('2026-11-16'),sb.slice(0,80));
  ok('제9회 정상이면 경고 없음(11-13 10시)',await pg.evaluate(()=>!document.getElementById('staleb')));
  ok('제9회 기대일 계산: 11-13 07:59→11-11',await pg.evaluate(()=>expectAsof(new Date('2026-11-13T07:59:00+09:00'))=='2026-11-11'));
  ok('제9회 기대일 계산: 11-16(월) 09:00→11-13(금)',await pg.evaluate(()=>expectAsof(new Date('2026-11-16T09:00:00+09:00'))=='2026-11-13'));

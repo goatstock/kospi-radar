@@ -37,7 +37,7 @@ const R=[];const ok=(n,c,msg)=>R.push([n,!!c,msg||'']);
  const nv=await pg.evaluate(()=>[...document.querySelectorAll('#nl > a')].filter(a=>a.style.display!='none').length);ok('제26회 뉴스 검색 "급등" → 2건',nv==2&&(await pg.innerText('#nfc')).includes('2건'),String(nv));
  await pg.click('#nseg button:nth-child(2)');await pg.waitForTimeout(400);await pg.click('#nseg button:nth-child(1)');await pg.waitForTimeout(400);ok('제26회 탭 바꿔도 검색 유지',await pg.evaluate(()=>[...document.querySelectorAll('#nl > a')].filter(a=>a.style.display!='none').length)==2);
  // 28/29 selfcheck
- const bad={at:'2026-11-12 17:40',ok:false,n:2,fails:['KR 종목 수 부족 900 < 1000','data/US/radar.json 없음'],asof:{KR:'2026-11-12',US:'2026-11-11'}};
+ const META=JSON.parse(require('fs').readFileSync(require('path').join(ROOT,'data/meta.json'),'utf8'));const bad={at:'2026-11-12 17:40',ok:false,n:2,fails:['KR 종목 수 부족 900 < 1000','data/US/radar.json 없음'],asof:{KR:META.KR.asof,US:META.US.asof}};
  const p5=await page(T,{sc:bad});P.push(p5);await p5.waitForTimeout(1000);const b5=await p5.evaluate(()=>(document.getElementById('staleb')||{}).innerText||'');ok('제28회 자가점검 실패 시 경고 띠',b5.includes('자동 점검 문제 2건')&&b5.includes('종목 수 부족'),b5);
  await p5.evaluate(()=>go('score'));await p5.waitForTimeout(2500);const s5=await p5.innerText('#view');ok('제29회 성적표에 자가점검 상세',s5.includes('문제 2건')&&s5.includes('radar.json 없음'));
  const good={...bad,ok:true,n:0,fails:[]};const p6=await page(T,{sc:good});P.push(p6);await p6.waitForTimeout(800);ok('제28회 이상 없으면 띠 없음',await p6.evaluate(()=>!document.getElementById('staleb')));

@@ -257,7 +257,7 @@ const pct=v=>v==null?'<span class="mu">-</span>':`<span class="${v>0?"up":v<0?"d
 const money=(v,m)=>m=="US"?(v>=1e9?"$"+(v/1e9).toFixed(1)+"B":"$"+(v/1e6).toFixed(0)+"M"):(v>=1e12?(v/1e12).toFixed(2)+"조원":Math.round(v/1e8).toLocaleString("ko-KR")+"억원");
 const won=(v,m)=>m=="US"?"$"+fmt(v,2):fmt(v)+"원";
 const CACHE={};
-const J0=p=>CACHE[p]||(CACHE[p]=fetch(p).then(r=>{if(!r.ok)throw new Error("자료를 찾지 못했습니다");if(r.headers.get("X-From-Cache"))offBanner(true);return r.json()}).catch(e=>{delete CACHE[p];throw e}));
+const J0=p=>CACHE[p]||(CACHE[p]=fetch(p).then(r=>{if(r.status==401&&SERVER){location.replace("./");throw new Error("로그인이 필요합니다")}if(r.status==402&&SERVER){if(ME)ME.active=false;gate();throw new Error("체험 기간이 끝났습니다")}if(!r.ok)throw new Error("자료를 찾지 못했습니다");if(r.headers.get("X-From-Cache"))offBanner(true);return r.json()}).catch(e=>{delete CACHE[p];throw e}));
 const kstDay=()=>new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
 let LP=null;const LIVEP=()=>LP||(LP=(async()=>{let j=null;try{j=await fetch("data/live/prices.json?t="+Math.floor(Date.now()/300000)).then(r=>r.ok?r.json():null);if(j&&j.day!=kstDay())j=null}catch(e){}
  if(mktOpen()){try{const k=await fetch("https://goatstock-live.ppopposs22.workers.dev/i").then(r=>r.json());j=j||{day:kstDay(),p:{}};j.t=k.t.slice(0,5);j.idx=Object.entries(k.i).map(([c,q])=>({code:c,close:q[0],pct:q[1]}));j.rt=true}catch(e){}}
@@ -284,6 +284,7 @@ function tGet(){try{return Number(localStorage.getItem(TKEY))||0}catch(e){return
 function tSet(v){try{localStorage.setItem(TKEY,String(v))}catch(e){}}
 function leftText(ms){const h=Math.floor(ms/3600000);return h>=24?`${Math.floor(h/24)}일 ${h%24}시간`:`${h}시간 ${Math.floor(ms%3600000/60000)}분`}
 function gate(){const now=Date.now(),st=tGet();
+  if(SERVER){if(!ME)return true;if(!ME.active)return ended("3일 체험 기간이 끝났습니다.");if(ME.role!="owner"&&now>HARD_STOP)return ended("이 체험판의 사용 기한(2026-12-10)이 지났습니다.");$("#badge").textContent=ME.role=="owner"?"관리자":leftText(Math.min(ME.trial_end,HARD_STOP)-now)+" 남음";$("#nav").style.display="";return true}
   if(now>HARD_STOP)return ended("이 체험판의 사용 기한(2026-12-10)이 지났습니다.");
   if(!st)return agree();
   const end=Math.min(st+TRIAL_MS,HARD_STOP);
@@ -303,7 +304,8 @@ function agree(){if(isPC()){shell(landing());$("#badge").textContent="체험 시
 function ended(msg){shell(`<div class="card" style="display:flex;flex-direction:column;gap:12px"><b style="font-size:22px;letter-spacing:-.02em">체험이 끝났습니다</b>
   <div style="font-size:14px;color:var(--sub);line-height:1.6">${esc(msg)} 써 주셔서 감사합니다.<br>정식판 소식은 이 링크를 보내 드린 분께 문의해 주세요.</div>${DISC}</div>`);$("#badge").textContent="체험 종료";return false}
 /* 실시간: Cloudflare 중계 서버(goatstock-live)에서 장중 10초마다 */
-const RT="https://goatstock-live.ppopposs22.workers.dev";
+const SERVER=!/(^|\.)github\.io$|^localhost$|^127\.|^$/.test(location.hostname);
+const RT=SERVER?location.origin+"/rt":"https://goatstock-live.ppopposs22.workers.dev";
 const KR_HOL=["2026-01-01","2026-02-16","2026-02-17","2026-02-18","2026-03-02","2026-05-01","2026-05-05","2026-05-25","2026-06-03","2026-08-17","2026-09-24","2026-09-25","2026-10-05","2026-10-09","2026-12-25","2026-12-31","2027-01-01"];
 const US_HOL=["2026-01-01","2026-01-19","2026-02-16","2026-04-03","2026-05-25","2026-06-19","2026-07-03","2026-09-07","2026-11-26","2026-12-25","2027-01-01"];
 const KR_SPECIAL={"2026-11-19":[600,990],"2027-01-04":[600,930]};/* 수능일 10:00~16:30, 새해 첫 개장 10:00 */
@@ -1247,7 +1249,14 @@ async function heroKpi(){const t=document.querySelector(".pchero .htx");if(!t)re
 function pcFx(){if(!isPC())return;const tile=box=>{if(!box||box.querySelector(".fxgrid"))return;const rs=[...box.querySelectorAll(":scope > .fxr")];if(!rs.length)return;const g=document.createElement("div");g.className="fxgrid";rs[0].before(g);rs.forEach(r=>{const sv=r.querySelector(".fxh svg");if(sv)sv.setAttribute("preserveAspectRatio","none");g.appendChild(r)})};
  const b=document.getElementById("fxbox");tile(b);tile(document.getElementById("fxbox2"));
  if(b&&!b.querySelector(".fxwrap")){const cs=[...b.querySelectorAll(":scope > .fxcalc")],g=b.querySelector(".fxgrid");if(cs.length&&g){const w=document.createElement("div");w.className="fxwrap";g.before(w);const sd=document.createElement("div");sd.className="fxside";cs.forEach(c=>sd.appendChild(c));w.append(g,sd)}}}
-function boot(){PCLAST=isPC();pcShell();try{document.body.dataset.mt=localStorage.getItem("m_theme")||sysTheme()||"light"}catch(e){document.body.dataset.mt="light"}try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{const t=sysTheme();if(t){document.body.dataset.mt=t;paintTheme()}})}catch(e){}paintTheme();fsApply();if(gate()&&!deepLink()&&!viewLink()&&!/^#w=/.test(location.hash))go("kr");if(tGet()&&/^#w=/.test(location.hash))watchLink();if(tGet())setTimeout(()=>{tour();if(!document.getElementById("tour"))whatsNew()},1500);setTimeout(staleBanner,800);setInterval(staleBanner,600000);window.addEventListener("hashchange",()=>{if(tGet())deepLink()});setInterval(()=>{if(tGet())gate()},60000)}
+/* 로그인 서버 모드(2026-11-13): 자료는 로그인한 사람에게만 서버에서. 화면에 이용자 식별 표시(워터마크) */
+let ME=null;
+async function meLoad(){try{const r=await fetch("api/me",{cache:"no-store"});if(r.status==401){location.replace("./");return null}if(!r.ok)return null;ME=await r.json();wmark();acctBtn();return ME}catch(e){return null}}
+function wmark(){if(!ME||document.getElementById("wm"))return;const t=`GOAT STOCK · ${ME.mask} · ${ME.wm} · ${new Date().toISOString().slice(0,10)}`;
+ const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="420" height="200"><text x="10" y="110" transform="rotate(-18 210 100)" font-family="sans-serif" font-size="14" fill="%23808080" fill-opacity="0.09">${t.replace(/[<>&"]/g,"")}</text></svg>`;
+ const d=document.createElement("div");d.id="wm";d.setAttribute("aria-hidden","true");d.style.cssText=`position:fixed;inset:0;pointer-events:none;z-index:2147483000;background-image:url("data:image/svg+xml;utf8,${encodeURIComponent(svg).replace(/%2523/g,"%23")}");background-repeat:repeat`;document.body.appendChild(d)}
+function acctBtn(){if(document.getElementById("outBtn"))return;const b=document.createElement("button");b.id="outBtn";b.className="pill";b.style.cssText="height:32px;font-size:12px";b.textContent="로그아웃";b.title=ME?ME.mask:"";b.onclick=async()=>{try{await fetch("api/logout",{method:"POST"})}catch(e){}try{localStorage.clear()}catch(e){}location.replace("./")};const bd=document.getElementById("badge");if(bd)bd.after(b)}
+function boot(){if(SERVER&&!ME){meLoad().then(m=>{if(m)boot()});return}PCLAST=isPC();pcShell();try{document.body.dataset.mt=localStorage.getItem("m_theme")||sysTheme()||"light"}catch(e){document.body.dataset.mt="light"}try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{const t=sysTheme();if(t){document.body.dataset.mt=t;paintTheme()}})}catch(e){}paintTheme();fsApply();if(gate()&&!deepLink()&&!viewLink()&&!/^#w=/.test(location.hash))go("kr");if(tGet()&&/^#w=/.test(location.hash))watchLink();if(tGet())setTimeout(()=>{tour();if(!document.getElementById("tour"))whatsNew()},1500);setTimeout(staleBanner,800);setInterval(staleBanner,600000);window.addEventListener("hashchange",()=>{if(tGet())deepLink()});setInterval(()=>{if(tGet())gate()},60000)}
 boot();
 </script>
 </body>

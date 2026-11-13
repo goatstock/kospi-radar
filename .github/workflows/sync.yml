@@ -1,0 +1,26 @@
+name: 웹 서버로 올리기
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      full:
+        description: "전체 다시 올리기(1)"
+        default: "1"
+permissions:
+  id-token: write
+  contents: read
+concurrency: { group: sync, cancel-in-progress: false }
+jobs:
+  up:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node tools/deploy/upload.js
+        env:
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+          FULL: ${{ github.event_name == 'workflow_dispatch' && inputs.full || '0' }}

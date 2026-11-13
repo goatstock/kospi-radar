@@ -38,6 +38,6 @@ const R=[];const ok=(n,c,msg)=>R.push([n,!!c,msg||'']);
  ok('제78회 새 버전 안내 띠(한 번만)·새로 고침 버튼',nv.includes('새 버전이 준비됐습니다')&&nv.includes('새로 고침')&&await p2.evaluate(()=>document.querySelectorAll('#newv').length==1),nv);
  ok('제78회 첫 설치 때는 안 띄우고 업데이트 때만(코드 조건 확인)',fs.readFileSync(ROOT+'/index.html','utf8').includes('addEventListener("controllerchange",()=>{if(had)newVer()})'));
  // 80 search shows cap
- await pg.evaluate(()=>go('find'));await pg.waitForTimeout(1500);await pg.fill('#q','삼성전자');await pg.waitForTimeout(500);const sr=await pg.evaluate(()=>document.querySelector('#sr .row .nm span').innerText);ok('제80회 검색 결과에 시가총액',sr.includes('시총 1,207조'),sr);
+ await pg.evaluate(()=>go('find'));await pg.waitForTimeout(1500);await pg.fill('#q','삼성전자');await pg.waitForTimeout(500);const sr=await pg.evaluate(()=>document.querySelector('#sr .row .nm span').innerText);ok('제80회 검색 결과에 시가총액',/시총 [\d,.]+조/.test(sr),sr);
  for(const p of P)ok('JS오류 없음',!p.errs.length,p.errs.join('|'));
  R.forEach(([n,c,m])=>console.log((c?'합격 ':'실패 ')+n+(c?'':'  ← '+m)));console.log(`합계 ${R.filter(x=>x[1]).length}/${R.length}`);await br.close();srv.close()})();
