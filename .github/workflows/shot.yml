@@ -1,0 +1,35 @@
+name: 첫 화면 실제 화면 매일 교체
+on:
+  schedule:
+    - cron: "50 7 * * 1-5"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["tools/shot/**", ".github/workflows/shot.yml"]
+permissions:
+  id-token: write
+  contents: read
+concurrency: { group: shot, cancel-in-progress: true }
+jobs:
+  shot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -q pillow
+      - run: python tools/lab/sector.py > /dev/null
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm i --no-save playwright@1.49.1 && npx playwright install --with-deps chromium
+      - run: |
+          python -m http.server 8811 > /dev/null 2>&1 &
+          sleep 2
+          mkdir -p /tmp/shot && node tools/shot/shot.js /tmp/shot/dash.png
+          python -c "from PIL import Image;Image.open('/tmp/shot/dash.png').convert('RGB').resize((960,600),Image.LANCZOS).save('/tmp/shot/dash.webp',quality=80,method=6)"
+          base64 -w0 /tmp/shot/dash.webp > /tmp/shot/dash.b64 && cp tools/shot/featbg.b64 /tmp/shot/
+          python tools/deploy/build_login.py /tmp/shot/dash.b64
+      - run: node tools/deploy/upload.js
+        env:
+          FILES: login.html,static/sector_kr.json
