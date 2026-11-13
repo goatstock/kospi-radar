@@ -1,4 +1,4 @@
-# 지수 차트 자료(일봉 2년 + 최근 거래일 5분봉) → static/idx_hist.json  (고트스톡, 2026-11-14)
+# 지수 차트 자료(일봉 2년 + 최근 거래일 5분봉) → static/idx_hist.json  (고트스톡, 2026-11-14) 
 # 메인 화면 지수 칸을 누르면 차트를 보여 주기 위한 것. 시세 조회만.
 import json, time, datetime, urllib.request
 H = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130"}
