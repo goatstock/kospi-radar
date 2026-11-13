@@ -1,27 +1,16 @@
-# 자료원 시험: 코스피200 야간선물(KRX 야간 파생시장) 시세를 주는 공개 주소 찾기
-import urllib.request, json
+# 자료원 시험 2: 야간선물 단서 찾기('야간'·night 주변 글자 출력)
+import urllib.request, re
 H = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130", "Referer": "https://m.stock.naver.com/"}
-U = [
- "https://m.stock.naver.com/api/index/FUT/basic",
- "https://m.stock.naver.com/api/index/FUT/integration",
- "https://m.stock.naver.com/api/index/NFUT/basic",
- "https://m.stock.naver.com/api/index/FUTN/basic",
- "https://m.stock.naver.com/api/index/FUT_NIGHT/basic",
- "https://m.stock.naver.com/api/futures/FUT/basic",
- "https://polling.finance.naver.com/api/realtime/domestic/index/NFUT",
- "https://polling.finance.naver.com/api/realtime/domestic/futures/FUT",
- "https://api.stock.naver.com/index/FUT/basic",
- "https://api.stock.naver.com/chart/domestic/index/FUT/minute?startDateTime=202611131800&endDateTime=202611140600",
- "https://m.stock.naver.com/front-api/marketIndex/productDetail?category=futures&reutersCode=FUT",
- "https://finance.daum.net/api/quotes/A101W6000?summary=false",
- "https://query1.finance.yahoo.com/v8/finance/chart/%5EKS200?range=1d&interval=5m",
- "https://api.investing.com/api/financialdata/1166160/historical/chart/?period=P1D&interval=PT5M&pointscount=60",
- "https://stooq.com/q/l/?s=kospi200.f&f=sd2t2ohlcv&h&e=json",
-]
+U = ["https://m.stock.naver.com/api/index/FUT/integration", "https://finance.naver.com/sise/sise_index.naver?code=FUT",
+     "https://m.stock.naver.com/domestic/index/FUT/total", "https://finance.naver.com/sise/", "https://m.stock.naver.com/api/home/majors",
+     "https://m.stock.naver.com/api/index/majors", "https://m.stock.naver.com/front-api/home/domestic/index?category=futures",
+     "https://www.krx.co.kr/main/main.jsp", "https://open.krx.co.kr/contents/MKD/99/MKD99000001.jsp"]
 for u in U:
     try:
-        req = urllib.request.Request(u, headers=H if "daum" not in u else {**H, "Referer": "https://finance.daum.net/"})
-        r = urllib.request.urlopen(req, timeout=15).read().decode("utf-8", "ignore")
-        print("OK ", u, "\n    ", r[:600].replace("\n", " "))
-    except Exception as e:
-        print("ERR", u, e)
+        raw = urllib.request.urlopen(urllib.request.Request(u, headers=H), timeout=15).read()
+        try: t = raw.decode("utf-8")
+        except UnicodeDecodeError: t = raw.decode("euc-kr", "ignore")
+        hits = [m.start() for m in re.finditer(r"야간|[Nn]ight|NIGHT|NFUT|ngt", t)][:6]
+        print("OK ", u, len(t), "hits", len(hits))
+        for h in hits: print("    ...", t[max(0, h - 150):h + 250].replace("\n", " "))
+    except Exception as e: print("ERR", u, e)
