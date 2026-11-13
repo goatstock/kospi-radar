@@ -74,3 +74,19 @@ out = {"date": str(last.date()), "made": (datetime.datetime.utcnow() + datetime.
 os.makedirs("static", exist_ok=True)
 json.dump(out, open("static/rank_kr.json", "w", encoding="utf-8"), ensure_ascii=False)
 print("완료", out["date"], out["n"], out["rows"][:5])
+
+# 실제 성적표: 매일 낸 순위를 보관(Actions 캐시)하고, 5거래일이 지난 날은 실제 가격으로 채점
+HP = "flowcache/rank_hist.csv.gz"
+today_h = pd.DataFrame({"date": str(last.date()), "code": d["code"].values, "pct": d["pct"].values, "liq": d["liq"].values})
+hist = pd.concat([pd.read_csv(HP, dtype={"code": str, "date": str}) if os.path.exists(HP) else today_h.iloc[:0], today_h]).drop_duplicates(["date", "code"], keep="last")
+hist.to_csv(HP, index=False, compression="gzip")
+yy = pd.DataFrame({"date": df["date"].dt.strftime("%Y-%m-%d"), "code": df["code"], "y": y.values, "liq0": liq.values})
+tr_rows = []
+for D, hd in hist.groupby("date"):
+    m_ = hd.merge(yy, on=["date", "code"], how="left")
+    m_ = m_[(m_["liq"].astype(str) == "True") & m_["y"].notna()]
+    if len(m_) < 50: continue
+    top = m_.sort_values("pct", ascending=False).head(10)["y"].mean(); al = m_["y"].mean()
+    tr_rows.append([D, round(top * 100, 2), round(al * 100, 2), round((top - al) * 100, 2)])
+json.dump({"made": out["made"], "rule": "다음날 시가 매수 → 5거래일 뒤 종가, 비용 0.25%, 거래대금 5억 이상 상위 10종목", "rows": sorted(tr_rows)}, open("static/rank_track.json", "w", encoding="utf-8"), ensure_ascii=False)
+print("성적표", len(hist["date"].unique()), "일 보관,", len(tr_rows), "일 채점")

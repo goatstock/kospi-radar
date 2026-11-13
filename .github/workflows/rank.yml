@@ -28,11 +28,12 @@ jobs:
         continue-on-error: true
         with: { name: flow10y, path: flowcache, run-id: 43411737285, github-token: "${{ secrets.GITHUB_TOKEN }}" }
       - run: python tools/lab/flow_update.py
-      - uses: actions/cache/save@v4
-        with: { path: flowcache, key: "flow-v1-${{ github.run_id }}" }
       - run: python tools/lab/rank_daily.py
+      - if: always()
+        uses: actions/cache/save@v4
+        with: { path: flowcache, key: "flow-v1-${{ github.run_id }}" }
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
       - run: node tools/deploy/upload.js
         env:
-          FILES: static/rank_kr.json
+          FILES: static/rank_kr.json,static/rank_track.json
