@@ -1,0 +1,27 @@
+name: 미국 AI 상대 순위 매일 계산
+on:
+  schedule:
+    - cron: "40 21 * * 1-5"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["tools/lab/rank_us.py", "tools/lab/us_val.json", ".github/workflows/rank_us.yml"]
+permissions:
+  id-token: write
+  contents: read
+concurrency: { group: rankus, cancel-in-progress: true }
+jobs:
+  rank:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -q lightgbm pandas numpy scikit-learn
+      - run: python tools/lab/rank_us.py
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: node tools/deploy/upload.js
+        env:
+          FILES: static/rank_us.json

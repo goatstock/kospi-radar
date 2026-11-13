@@ -4,3 +4,4 @@ flowcache/
 static/rank_track.json
 data/live_us/
 static/idx_hist.json
+static/rank_us.json
