@@ -1,0 +1,18 @@
+name: 연구용 10년 수급 수집
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["tools/lab/hist_flow.py"]
+permissions: { contents: read }
+jobs:
+  get:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python tools/lab/hist_flow.py
+      - uses: actions/upload-artifact@v4
+        with: { name: flow10y, path: kr_flow_10y.csv.gz, retention-days: 1 }
