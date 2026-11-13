@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["tools/shot/**", ".github/workflows/shot.yml"]
+    paths: ["tools/shot/**", ".github/workflows/shot.yml", "tools/deploy/login.src.html", "tools/deploy/build_login.py", "index.html"]
 permissions:
   id-token: write
   contents: read

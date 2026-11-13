@@ -59,7 +59,7 @@ h2 .bars{display:inline-block;width:18px;height:20px;background:linear-gradient(
 .f p{margin:0;font-size:14px;color:var(--sub);line-height:1.65}
 .mini{background:var(--soft);border-radius:14px;padding:10px;font-size:11.5px;min-height:92px;display:flex;flex-direction:column;justify-content:center;gap:5px;position:relative}
 .mini .ex{position:absolute;right:6px;top:4px;font-size:9.5px;color:var(--mute)}
-.hmg{display:grid;grid-template-columns:2fr 1fr 1fr;grid-template-rows:1fr 1fr;gap:3px;height:74px}.hmg i{border-radius:4px}
+.hmg{display:grid;grid-template-columns:1.25fr 1fr;grid-template-rows:1fr 1fr;gap:4px;height:92px;margin-top:10px}.hmg i{border-radius:4px}
 .wl div{display:flex;justify-content:space-between;background:#fff;border-radius:7px;padding:4px 7px}.up{color:var(--up);font-weight:800}.dn{color:var(--dn);font-weight:800}
 .big{font-family:Inter,"Pretendard Variable",sans-serif;font-size:22px;font-weight:900}
 .cal div{display:flex;gap:6px;align-items:center;background:#fff;border-radius:7px;padding:5px 7px;font-weight:700}.cal b{color:var(--acc)}
@@ -91,7 +91,7 @@ footer b{color:var(--ink);font-size:15px}footer span{display:flex;align-items:ce
 .fx .f h3 svg{color:#7048FF}
 em.hot{font-style:normal;font-size:11px;font-weight:900;color:#fff;background:linear-gradient(90deg,#FF4D6D,#FF7A59);border-radius:99px;padding:2px 8px;animation:hp 1.6s ease-in-out infinite}@keyframes hp{50%{transform:scale(1.12)}}
 em.bell{position:absolute;right:22px;top:20px;font-style:normal;width:22px;height:22px;border-radius:50%;background:#E53950;color:#fff;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(229,57,80,.4);animation:hp 1.4s ease-in-out infinite}
-.hmg i{display:flex;align-items:center;justify-content:center;text-align:center;font-style:normal;font-size:10px;font-weight:800;color:#fff;line-height:1.2}
+.hmg i{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;text-align:center;font-style:normal;color:#fff;line-height:1.15;padding:2px;min-width:0;text-shadow:0 1px 2px rgba(0,0,0,.18)}.hmg i em{font-style:normal;font-size:10px;font-weight:600;letter-spacing:-.3px;opacity:.95;white-space:nowrap}.hmg i b{font-size:11.5px;font-weight:800;font-family:Inter,sans-serif;letter-spacing:-.2px;font-variant-numeric:tabular-nums}.hmg .r3 em{font-size:13px}.hmg .r3 b{font-size:15px}.hmg .r1{color:#8A1F2E;text-shadow:none}
 .hmg .r3{background:#E5576B;grid-row:1/3}.hmg .r2{background:#F28A9A}.hmg .r1{background:#F5B3BD}.hmg .b2{background:#4F86E8}.hmg .b1{background:#8FB0F0}
 .therm{grid-column:1/-1;display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:7px 12px;font-size:12.5px}.therm b{color:var(--up)}
 .therm i{flex:1;height:7px;border-radius:99px;background:var(--soft);overflow:hidden}.therm s{display:block;height:100%;background:linear-gradient(90deg,#FF9AA9,#E53950);border-radius:99px;animation:tw 1.6s ease-out both}@keyframes tw{from{width:0!important}}
@@ -150,7 +150,7 @@ em.bell{position:absolute;right:22px;top:20px;font-style:normal;width:22px;heigh
   <div class="fxhd"><h2><span class="bars"></span>GOAT STOCK 핵심 기능</h2><p>시장 흐름부터 투자 연습까지,<br>더 빠르고, 더 정확하고, 더 투명하게</p></div>
   <div class="grid">
    <div class="f rv"><h3><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg>시장 지도 · 시장 온도<em class="hot">HOT</em></h3><p>거래대금·시가총액 지도와 공포↔탐욕 온도계로 시장 분위기를 한눈에.</p>
-    <div class="mini"><span class="ex">예시</span><div class="hmg"><i class="r3">반도체<br>+2.8%</i><i class="b2">2차전지<br>-1.4%</i><i class="r1"></i><i class="b1">바이오<br>-0.9%</i><i class="r2"></i></div></div>
+    <div class="mini"><span class="ex">예시</span><div class="hmg"><i class="r3"><em>반도체</em><b>+2.8%</b></i><i class="b2"><em>2차전지</em><b>−1.4%</b></i><i class="b1"><em>바이오</em><b>−0.9%</b></i></div></div>
     <div class="therm"><span>🌡 시장 온도</span><b>탐욕 78</b><i><s style="width:78%"></s></i></div></div>
    <div class="f rv"><h3><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>관심종목 · 알림<em class="bell">1</em></h3><p>관심종목 실시간 가격과 ±5% 급등락·환율 알림을 바로 받아 보세요.</p>
     <div class="mini wl"><span class="ex">예시</span><div><span>⭐ 종목 A</span><span class="up">+0.2%</span></div><div><span>⭐ 종목 B</span><span class="dn">-1.4%</span></div><div><span>⭐ 종목 C</span><span class="dn">-4.1%</span></div></div></div>
