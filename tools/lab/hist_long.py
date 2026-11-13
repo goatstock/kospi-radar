@@ -29,12 +29,12 @@ else:
     H = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/130"}
     tick = [r[0] for r in json.load(open("data/US/index.json", encoding="utf-8"))["rows"]]
     def yh(t):
-        j = get(f"https://query1.finance.yahoo.com/v8/finance/chart/{t.replace('.', '-')}?range=11y&interval=1d&events=div%2Csplit", H); time.sleep(0.2)
+        j = get(f"https://query1.finance.yahoo.com/v8/finance/chart/{t.replace('.', '-')}?period1=1104537600&period2=1800000000&interval=1d&events=div%2Csplit", H); time.sleep(0.2)
         try:
             r = j["chart"]["result"][0]; q = r["indicators"]["quote"][0]; adj = r["indicators"].get("adjclose", [{}])[0].get("adjclose")
             return [[t, ts, q["open"][i], q["high"][i], q["low"][i], q["close"][i], q["volume"][i], adj[i] if adj else None] for i, ts in enumerate(r["timestamp"])]
         except Exception: return []
-    with gzip.open("us_daily_10y.csv.gz", "wt", newline="", encoding="utf-8") as f:
+    with gzip.open("us_daily_20y.csv.gz", "wt", newline="", encoding="utf-8") as f:
         w = csv.writer(f); w.writerow(["code", "ts", "open", "high", "low", "close", "volume", "adjclose"])
         with cf.ThreadPoolExecutor(4) as ex:
             for i, rs in enumerate(ex.map(yh, tick + ["^GSPC", "^NDX", "^VIX", "^TNX"])):
