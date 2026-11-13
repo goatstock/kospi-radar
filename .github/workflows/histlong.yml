@@ -1,0 +1,20 @@
+name: 연구용 장기 자료 수집(국내 20년·미국 10년)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["tools/lab/hist_long.py", ".github/workflows/histlong.yml"]
+permissions: { contents: read }
+jobs:
+  get:
+    strategy: { matrix: { mode: [kr20, us10] }, fail-fast: false }
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python tools/lab/hist_long.py
+        env: { MODE: "${{ matrix.mode }}" }
+      - uses: actions/upload-artifact@v4
+        with: { name: "hist_${{ matrix.mode }}", path: "*_*y.*.gz", retention-days: 3 }
