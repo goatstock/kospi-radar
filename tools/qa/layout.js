@@ -1,0 +1,14 @@
+// 카드 겹침·넘침 검사 (모든 화면)
+const {chromium}=require('playwright');const http=require('http'),fs=require('fs'),path=require('path');const ROOT=process.env.ROOT||require('path').resolve(__dirname,'../..');
+const srv=http.createServer((q,s)=>{let p=decodeURIComponent(q.url.split('?')[0]);if(p.endsWith('/'))p+='index.html';const f=path.join(ROOT,p.replace('/kospi-radar',''));fs.readFile(f,(e,b)=>{if(e){s.writeHead(404);return s.end()}s.writeHead(200,{'content-type':f.endsWith('.json')?'application/json':f.endsWith('.png')?'image/png':'text/html; charset=utf-8'});s.end(b)})}).listen(8790);
+(async()=>{const br=await chromium.launch();let bad=0;
+for(const [w,h] of [[390,844],[1280,900]]){const ctx=await br.newContext({serviceWorkers:'block',viewport:{width:w,height:h}});await ctx.addInitScript(`localStorage.setItem('gs_trial_start',String(Date.now()));localStorage.setItem('goat_tour','1');localStorage.setItem('goat_seen_v',JSON.stringify('2026.11.13 · 개선 100회'));localStorage.setItem('goat_watch',JSON.stringify([{m:'KR',c:'005930',n:'삼성전자'}]));localStorage.setItem('goat_paper_KR',JSON.stringify({cash:5000000,pos:{'005930':{n:10,avg:70000,name:'삼성전자'}},log:[{t:1,code:'005930',name:'삼성전자',side:'매도',n:1,px:1,fee:1,tax:1,pnl:100}],pend:[]}))`);
+ await ctx.route('**/*',r=>r.request().url().startsWith('http://localhost')?r.continue():r.abort());const pg=await ctx.newPage();await pg.goto('http://localhost:8790/kospi-radar/');await pg.waitForTimeout(2000);
+ for(const [v,a] of [['kr'],['us'],['macro'],['news'],['paper'],['score'],['find'],['stock',{code:'005930',m:'KR'}],['stock',{code:'NVDA',m:'US'}]]){await pg.evaluate(([v,a])=>go(v,a),[v,a]);await pg.waitForTimeout(2200);await pg.evaluate(()=>document.querySelectorAll('#view details').forEach(d=>d.open=true));await pg.waitForTimeout(300);
+  const r=await pg.evaluate(()=>{const o=[];const C=[...document.querySelectorAll('#view > .card, #view > details.card, #view > div > .card')].filter(c=>c.offsetParent);
+   C.forEach(c=>{if(c.scrollHeight>c.clientHeight+4&&getComputedStyle(c).overflowY=='visible'){o.push('넘침: '+(c.querySelector('h3')||c).innerText.slice(0,24)+` (${c.clientHeight}<${c.scrollHeight})`)}if(c.getBoundingClientRect().height<30)o.push('납작한 카드: '+(c.innerText||'').slice(0,24)+' h='+Math.round(c.getBoundingClientRect().height))});
+   for(let i=1;i<C.length;i++){const a=C[i-1].getBoundingClientRect(),b=C[i].getBoundingClientRect();if(b.top<a.bottom-2&&Math.abs(a.left-b.left)<5)o.push('겹침: '+(C[i-1].querySelector('h3')||C[i-1]).innerText.slice(0,20)+' / '+(C[i].querySelector('h3')||C[i]).innerText.slice(0,20))}
+   const sw=document.documentElement.scrollWidth>innerWidth+1?['가로 넘침 '+document.documentElement.scrollWidth]:[];return o.concat(sw)});
+  console.log(`${w}px ${v}${a?' '+a.code:''}: ${r.length?r.join(' | '):'정상'}`);bad+=r.length}
+ await ctx.close()}
+console.log('문제',bad);await br.close();srv.close()})();
