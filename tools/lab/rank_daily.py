@@ -1,4 +1,4 @@
-# 매일 장마감 뒤: 10년 일봉으로 학습 → 오늘 전 종목 'AI 상대 순위(시험)' 계산 → static/rank_kr.json
+# 매일 장마감 뒤(v1.1): 10년 일봉으로 학습 → 오늘 전 종목 'AI 상대 순위(시험)' 계산 → static/rank_kr.json
 # 목표값: 다음날 시가 매수 → 5거래일 뒤 종가, 비용 차감, 그날 전체 평균 대비 초과수익. 매수 추천이 아님.
 import os, sys, json, gzip, csv, time, urllib.request, concurrent.futures as cf, datetime
 import numpy as np, pandas as pd, lightgbm as lgb

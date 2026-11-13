@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
-      - run: pip install -q lightgbm pandas numpy
+      - run: pip install -q lightgbm pandas numpy scikit-learn
       - run: python tools/lab/rank_daily.py
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
