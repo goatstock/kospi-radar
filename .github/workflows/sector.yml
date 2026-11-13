@@ -3,10 +3,11 @@ on:
   schedule:
     - cron: "5,35 0-6 * * 1-5"
     - cron: "40 7 * * 1-5"
+    - cron: "10 14,17,21 * * 1-5"
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["tools/lab/sector.py", ".github/workflows/sector.yml"]
+    paths: ["tools/lab/sector.py", "tools/lab/idx_hist.py", ".github/workflows/sector.yml"]
 permissions:
   id-token: write
   contents: read
@@ -20,8 +21,10 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: python tools/lab/sector.py
+      - run: python tools/lab/idx_hist.py
+        continue-on-error: true
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
       - run: node tools/deploy/upload.js
         env:
-          FILES: static/sector_kr.json
+          FILES: static/sector_kr.json,static/idx_hist.json
