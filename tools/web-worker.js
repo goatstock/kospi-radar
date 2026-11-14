@@ -222,6 +222,17 @@ export default {
       await env.DB.prepare("INSERT INTO us(uid,day,n) VALUES(?,?,1) ON CONFLICT(uid,day) DO UPDATE SET n=n+1").bind(me.id, day).run();
       const q = await env.DB.prepare("SELECT n FROM us WHERE uid=? AND day=?").bind(me.id, day).first();
       if (me.role !== "owner" && q && q.n > QUOTA) return J({ ok: false, msg: "오늘 이용 한도를 넘었습니다(자동 수집 방지)" }, 429);
+      if (p === "/rt/wk") {  // 11-14: 주말·야간에도 도는 '위켄드' 가격(코인 거래소 24시간 파생, 실제 지수 아님) — 20초 캐시
+        const ck = new Request("https://goatstock-web.internal/wk"), cache = caches.default; let hit = await cache.match(ck);
+        if (!hit) {
+          const o = { t: now() };
+          try { const j = await (await fetch("https://contract.mexc.com/api/v1/contract/ticker?symbol=NAS100_USDT", { headers: { "user-agent": "Mozilla/5.0" } })).json(); if (j && j.data) o.nas = [Number(j.data.lastPrice), Number(j.data.indexPrice) || null, "MEXC NAS100_USDT"]; } catch (e) {}
+          try { const m = await (await fetch("https://api.hyperliquid.xyz/info", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "allMids", dex: "xyz" }) })).json(); o.hl = {}; for (const [k, v] of Object.entries(m || {})) if (/^xyz:(CL|BRENTOIL|GOLD|SILVER|EWY|SP500|XYZ100|NDX|US500|SPX|NATGAS|DXY|KRW|JPY|EUR)$/.test(k)) o.hl[k.slice(4)] = Number(v); } catch (e) {}
+          try { const m2 = await (await fetch("https://api.hyperliquid.xyz/info", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "allMids" }) })).json(); o.coin = {}; for (const k of ["BTC", "ETH", "XRP", "SOL"]) if (m2 && m2[k]) o.coin[k] = Number(m2[k]); } catch (e) {}
+          hit = new Response(JSON.stringify(o), { headers: { "content-type": TEXT.json, "cache-control": "max-age=20" } }); await cache.put(ck, hit.clone());
+        }
+        return new Response(hit.body, { headers: sec(new Headers({ "content-type": TEXT.json, "cache-control": "no-store" })) });
+      }
       if (p.startsWith("/rt/")) {
         const r = await env.LIVE.fetch(new Request("https://goatstock-live.internal" + p.slice(3) + u.search, { headers: { "user-agent": "goatstock-web" } }));
         const h = sec(new Headers(r.headers)); h.delete("access-control-allow-origin"); h.set("cache-control", "no-store");
