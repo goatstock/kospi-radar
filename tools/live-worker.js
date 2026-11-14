@@ -125,8 +125,8 @@ export default {
         try { const j = await (await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(s)}?range=1d&interval=5m`, { headers: { "User-Agent": "Mozilla/5.0" } })).json(); const m = j.chart.result[0].meta;
           // 11-15: 주말·월요일 아침에도 '직전 국내 거래일 15:35' 기준을 쓰고(5일치), 야간장 끝(06:05)의 가격도 따로 줌
           let cut = Math.floor(Date.parse(new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10) + "T06:35:00Z") / 1000); if (cut * 1000 > Date.now()) cut -= 86400; while ([0, 6].includes(new Date((cut + 9 * 3600) * 1000).getUTCDay())) cut -= 86400;
-          let p35 = null, pe = null; try { const r5 = (await (await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(s)}?range=5d&interval=5m`, { headers: { "User-Agent": "Mozilla/5.0" } })).json()).chart.result[0], ts = r5.timestamp || [], cq = r5.indicators.quote[0].close || []; for (let i = 0; i < ts.length; i++) { if (cq[i] == null) continue; if (ts[i] <= cut - 300) p35 = cq[i]; if (ts[i] <= cut + 51600) pe = cq[i]; } } catch (e) {}
-          o[s] = [m.regularMarketPrice, m.chartPreviousClose ? (m.regularMarketPrice / m.chartPreviousClose - 1) * 100 : null, m.regularMarketTime, p35, Date.now() / 1000 > cut + 52200 ? pe : null]; } catch (e) {}
+          let p35 = null, pe = null, lp = null, lt = null; try { const r5 = (await (await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(s)}?range=5d&interval=5m`, { headers: { "User-Agent": "Mozilla/5.0" } })).json()).chart.result[0], ts = r5.timestamp || [], cq = r5.indicators.quote[0].close || []; for (let i = 0; i < ts.length; i++) { if (cq[i] == null) continue; lp = cq[i]; lt = ts[i]; if (ts[i] <= cut - 300) p35 = cq[i]; if (ts[i] <= cut + 51600) pe = cq[i]; } } catch (e) {}
+          const pc = m.previousClose || m.chartPreviousClose, lv = lp ?? m.regularMarketPrice; o[s] = [lv, pc ? (lv / pc - 1) * 100 : null, lt ? lt + 300 : m.regularMarketTime, p35, Date.now() / 1000 > cut + 52200 ? pe : null]; } catch (e) {}
       }
       return { t: kst(), ...o };
     });
