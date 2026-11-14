@@ -233,6 +233,19 @@ export default {
         }
         return new Response(hit.body, { headers: sec(new Headers({ "content-type": TEXT.json, "cache-control": "no-store" })) });
       }
+      if (p === "/rt/wkc") {  // 11-14: 위켄드 차트용 봉(Hyperliquid candleSnapshot) — 정해진 종목·간격만, 15초 캐시
+        const k = u.searchParams.get("k") || "", iv = u.searchParams.get("i") || "5m";
+        const IVS = { "1m": 6e4, "5m": 3e5, "15m": 9e5, "1h": 36e5, "4h": 144e5, "1d": 864e5 };
+        if (!/^(BTC|ETH|XRP|SOL|xyz:(CL|BRENTOIL|GOLD|SILVER|EWY|SP500|XYZ100|NATGAS|KRW))$/.test(k) || !IVS[iv]) return J({ ok: false }, 400);
+        const ck = new Request("https://goatstock-web.internal/wkc/" + k + "/" + iv), cache = caches.default; let hit = await cache.match(ck);
+        if (!hit) {
+          let a = [];
+          try { const t = now(); a = await (await fetch("https://api.hyperliquid.xyz/info", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "candleSnapshot", req: { coin: k, interval: iv, startTime: t - IVS[iv] * 400, endTime: t } }) })).json(); } catch (e) {}
+          const c = (Array.isArray(a) ? a : []).map(x => [x.t, +x.o, +x.h, +x.l, +x.c, +x.v]);
+          hit = new Response(JSON.stringify({ t: now(), k, i: iv, c }), { headers: { "content-type": TEXT.json, "cache-control": "max-age=15" } }); await cache.put(ck, hit.clone());
+        }
+        return new Response(hit.body, { headers: sec(new Headers({ "content-type": TEXT.json, "cache-control": "no-store" })) });
+      }
       if (p.startsWith("/rt/")) {
         const r = await env.LIVE.fetch(new Request("https://goatstock-live.internal" + p.slice(3) + u.search, { headers: { "user-agent": "goatstock-web" } }));
         const h = sec(new Headers(r.headers)); h.delete("access-control-allow-origin"); h.set("cache-control", "no-store");
