@@ -53,9 +53,13 @@ async function limit(env, key, max, ms) {
   if (r.n >= max) return false;
   await env.DB.prepare("UPDATE rl SET n=n+1 WHERE k=?").bind(key).run(); return true;
 }
+// 11-15 속도: 로그인 확인·자료 파일을 서버 메모리에 60초 보관(매 요청마다 DB를 3~4번 다녀오던 것을 줄임)
+const UC = new Map(), FC = new Map(), QC = new Map();
 async function user(req, env) {
   const t = cookie(req, "gs"); if (!t || !/^[0-9a-f]{64}$/.test(t)) return null;
+  const c = UC.get(t); if (c && c.exp > now()) return c.u;
   const s = await env.DB.prepare("SELECT u.id,u.email,u.role,u.trial_end FROM s JOIN u ON u.id=s.uid WHERE s.tok=? AND s.exp>?").bind(await sha(t), now()).first();
+  if (UC.size > 3000) UC.clear(); UC.set(t, { u: s || null, exp: now() + 60000 });
   return s || null;
 }
 const active = u => u && (u.role === "owner" || u.role === "member" || u.trial_end > now());
@@ -77,10 +81,13 @@ async function oidc(req, env) {
 }
 
 async function file(env, p) {
+  const c = FC.get(p); if (c && c.exp > now()) return { ...c.v, body: typeof c.v.body === "string" ? c.v.body : c.v.body.slice() };
   const r = await env.DB.prepare("SELECT b,bin,at FROM f WHERE p=?").bind(p).first(); if (!r) return null;
   const ext = (p.split(".").pop() || "").toLowerCase();
   const body = r.bin ? Uint8Array.from(atob(r.b), c => c.charCodeAt(0)) : r.b;
-  return { body, type: TEXT[ext] || "application/octet-stream", at: r.at };
+  const v = { body, type: TEXT[ext] || "application/octet-stream", at: r.at };
+  if (FC.size > 400) FC.clear(); FC.set(p, { v, exp: now() + 60000 });
+  return { ...v, body: typeof body === "string" ? body : body.slice() };
 }
 async function serveApp(env, name, cache) {
   const f = await file(env, "app/" + name); if (!f) return new Response("준비 중입니다", { status: 404, headers: sec(new Headers({ "content-type": TEXT.txt })) });
@@ -90,12 +97,12 @@ async function serveApp(env, name, cache) {
 }
 
 export default {
-  async fetch(req, env) {
+  async fetch(req, env, ctx) {
     const u = new URL(req.url), p = u.pathname, ua = req.headers.get("user-agent") || "";
     if (p === "/robots.txt") return new Response("User-agent: *\nDisallow: /\n", { headers: sec(new Headers({ "content-type": TEXT.txt })) });
 
     // 자료 올리기(GitHub Actions 전용)
-    if (p === "/admin/upload" && req.method === "POST") {
+    if (p === "/admin/upload" && req.method === "POST") { FC.clear();
       let ok = false; try { ok = await oidc(req, env); } catch (e) { ok = false; }
       if (!ok) return J({ ok: false }, 403);
       const { files } = await req.json(); const t = now();
@@ -110,6 +117,7 @@ export default {
     // 로그인·가입
     if (p.startsWith("/api/")) {
       if (req.method === "POST" && !(req.headers.get("origin") || "").startsWith(u.origin)) return J({ ok: false, msg: "잘못된 요청" }, 403);
+      if (req.method === "POST") UC.clear();
       if (p === "/api/signup" && req.method === "POST") {
         if (!(await limit(env, "su:" + ip(req), 3, DAY))) return J({ ok: false, msg: "가입 시도가 너무 많습니다. 내일 다시 시도해 주세요." }, 429);
         const b = await req.json().catch(() => ({})); const email = String(b.email || "").trim().toLowerCase(), pw = String(b.pw || "");
@@ -219,8 +227,10 @@ export default {
       const me = await user(req, env); if (!me) return J({ ok: false, login: true }, 401);
       if (!active(me)) return J({ ok: false, ended: true }, 402);
       const day = new Date(now() + 9 * 3600000).toISOString().slice(0, 10);
-      await env.DB.prepare("INSERT INTO us(uid,day,n) VALUES(?,?,1) ON CONFLICT(uid,day) DO UPDATE SET n=n+1").bind(me.id, day).run();
-      const q = await env.DB.prepare("SELECT n FROM us WHERE uid=? AND day=?").bind(me.id, day).first();
+      const qk = me.id + "|" + day, seen = (QC.get(qk) || 0) + 1; if (QC.size > 5000) QC.clear(); QC.set(qk, seen);
+      const qw = env.DB.prepare("INSERT INTO us(uid,day,n) VALUES(?,?,1) ON CONFLICT(uid,day) DO UPDATE SET n=n+1 RETURNING n").bind(me.id, day).first().then(q => { if (q && q.n > (QC.get(qk) || 0)) QC.set(qk, q.n); }).catch(() => {});
+      if (ctx && ctx.waitUntil) ctx.waitUntil(qw); else await qw;
+      const q = { n: QC.get(qk) };
       if (me.role !== "owner" && q && q.n > QUOTA) return J({ ok: false, msg: "오늘 이용 한도를 넘었습니다(자동 수집 방지)" }, 429);
       if (p === "/rt/wk") {  // 11-14: 주말·야간에도 도는 '위켄드' 가격(코인 거래소 24시간 파생, 실제 지수 아님) — 20초 캐시
         const ck = new Request("https://goatstock-web.internal/wk"), cache = caches.default; let hit = await cache.match(ck);
