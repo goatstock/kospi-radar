@@ -229,6 +229,19 @@ export default {
           try { const j = await (await fetch("https://contract.mexc.com/api/v1/contract/ticker?symbol=NAS100_USDT", { headers: { "user-agent": "Mozilla/5.0" } })).json(); if (j && j.data) o.nas = [Number(j.data.lastPrice), Number(j.data.indexPrice) || null, "MEXC NAS100_USDT"]; } catch (e) {}
           try { const m = await (await fetch("https://api.hyperliquid.xyz/info", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "allMids", dex: "xyz" }) })).json(); o.hl = {}; for (const [k, v] of Object.entries(m || {})) if (/^xyz:(CL|BRENTOIL|GOLD|SILVER|EWY|SP500|XYZ100|NDX|US500|SPX|NATGAS|DXY|KRW|JPY|EUR)$/.test(k)) o.hl[k.slice(4)] = Number(v); } catch (e) {}
           try { const m2 = await (await fetch("https://api.hyperliquid.xyz/info", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "allMids" }) })).json(); o.coin = {}; for (const k of ["BTC", "ETH", "XRP", "SOL"]) if (m2 && m2[k]) o.coin[k] = Number(m2[k]); } catch (e) {}
+          // 11-15: 등락 기준 = 같은 거래소 가격의 '직전 미국 선물 마감(평일 17:00 ET)' 값(주식 ETF EWY는 16:00 ET), 코인은 24시간 전 — 10분 캐시
+          const rk = new Request("https://goatstock-web.internal/wkref"); let rh = await cache.match(rk);
+          if (rh) o.ref = await rh.json(); else {
+            const t = now(), F = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", hourCycle: "h23", weekday: "short" }); let T = 0;
+            for (let d = 0; d < 8 && !T; d++) { const D = Math.floor(t / 864e5) * 864e5 - d * 864e5; for (const h of [22, 21]) { const x = D + h * 36e5; if (x > t) continue; const ps = F.formatToParts(new Date(x)), hh = +ps.find(q => q.type == "hour").value, wd = ps.find(q => q.type == "weekday").value; if (hh == 17 && !/Sat|Sun/.test(wd)) { T = x; break; } } }
+            const ref = { T }, H24 = Math.floor((t - 864e5) / 36e5) * 36e5;
+            await Promise.all(["xyz:CL", "xyz:BRENTOIL", "xyz:GOLD", "xyz:SILVER", "xyz:NATGAS", "xyz:EWY", "xyz:SP500", "xyz:XYZ100", "BTC", "ETH", "XRP", "SOL"].map(async k => { try {
+              const coin = !k.startsWith("xyz:"), at = coin ? H24 : T - (k == "xyz:EWY" ? 2 : 1) * 36e5;
+              const a = await (await fetch("https://api.hyperliquid.xyz/info", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "candleSnapshot", req: { coin: k, interval: "1h", startTime: at - 36e5, endTime: at + 36e5 } }) })).json();
+              const c = (a || []).find(x => x.t == at); if (c) ref[coin ? k : k.slice(4)] = coin ? +c.o : +c.c; } catch (e) {} }));
+            o.ref = ref; await cache.put(rk, new Response(JSON.stringify(ref), { headers: { "cache-control": "max-age=600" } }));
+          }
+          try { const MX = new Set(["BTC_USDT", "ETH_USDT", "XRP_USDT", "SOL_USDT", "NAS100_USDT", "SPX500_USDT", "USOIL_USDT", "UKOIL_USDT", "XAU_USDT", "SILVER_USDT", "NGAS_USDT", "EWY_USDT", "KOSPI_USDT", "JP225_USDT", "SKHYNIXSTOCK_USDT", "SAMSUNGSTOCK_USDT"]); const j = await (await fetch("https://contract.mexc.com/api/v1/contract/ticker", { headers: { "user-agent": "Mozilla/5.0" } })).json(); o.mx = {}; for (const x of (j && j.data) || []) if (MX.has(x.symbol)) o.mx[x.symbol] = [Number(x.lastPrice), x.riseFallRatesOfTimezone ? Number(x.riseFallRatesOfTimezone[1]) * 100 : null]; } catch (e) {}
           hit = new Response(JSON.stringify(o), { headers: { "content-type": TEXT.json, "cache-control": "max-age=20" } }); await cache.put(ck, hit.clone());
         }
         return new Response(hit.body, { headers: sec(new Headers({ "content-type": TEXT.json, "cache-control": "no-store" })) });
@@ -236,11 +249,11 @@ export default {
       if (p === "/rt/wkc") {  // 11-14: 위켄드 차트용 봉(Hyperliquid candleSnapshot) — 정해진 종목·간격만, 15초 캐시
         const k = u.searchParams.get("k") || "", iv = u.searchParams.get("i") || "5m";
         const IVS = { "1m": 6e4, "5m": 3e5, "15m": 9e5, "1h": 36e5, "4h": 144e5, "1d": 864e5 };
-        if (!/^(BTC|ETH|XRP|SOL|xyz:(CL|BRENTOIL|GOLD|SILVER|EWY|SP500|XYZ100|NATGAS|KRW))$/.test(k) || !IVS[iv]) return J({ ok: false }, 400);
+        if (!/^(BTC|ETH|XRP|SOL|xyz:(CL|BRENTOIL|GOLD|SILVER|EWY|SP500|XYZ100|NATGAS|KRW)|(BTC|ETH|XRP|SOL|NAS100|SPX500|USOIL|UKOIL|XAU|SILVER|NGAS|EWY|KOSPI|JP225|SKHYNIXSTOCK|SAMSUNGSTOCK)_USDT)$/.test(k) || !IVS[iv]) return J({ ok: false }, 400);
         const ck = new Request("https://goatstock-web.internal/wkc/" + k + "/" + iv), cache = caches.default; let hit = await cache.match(ck);
         if (!hit) {
           let a = [];
-          try { const t = now(); a = await (await fetch("https://api.hyperliquid.xyz/info", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "candleSnapshot", req: { coin: k, interval: iv, startTime: t - IVS[iv] * 400, endTime: t } }) })).json(); } catch (e) {}
+          if (/_USDT$/.test(k)) { try { const MI = { "1m": "Min1", "5m": "Min5", "15m": "Min15", "1h": "Min60", "4h": "Hour4", "1d": "Day1" }, t = Math.floor(now() / 1000), d = (await (await fetch(`https://contract.mexc.com/api/v1/contract/kline/${k}?interval=${MI[iv]}&start=${t - IVS[iv] / 1000 * 400}&end=${t}`, { headers: { "user-agent": "Mozilla/5.0" } })).json()).data; a = d.time.map((x, i) => ({ t: x * 1000, o: d.open[i], h: d.high[i], l: d.low[i], c: d.close[i], v: d.vol[i] })); } catch (e) {} } else try { const t = now(); a = await (await fetch("https://api.hyperliquid.xyz/info", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "candleSnapshot", req: { coin: k, interval: iv, startTime: t - IVS[iv] * 400, endTime: t } }) })).json(); } catch (e) {}
           const c = (Array.isArray(a) ? a : []).map(x => [x.t, +x.o, +x.h, +x.l, +x.c, +x.v]);
           hit = new Response(JSON.stringify({ t: now(), k, i: iv, c }), { headers: { "content-type": TEXT.json, "cache-control": "max-age=15" } }); await cache.put(ck, hit.clone());
         }
