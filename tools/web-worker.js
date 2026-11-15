@@ -114,6 +114,17 @@ export default {
 
     if (AI_BOTS.test(ua) || !ua) return new Response("Forbidden", { status: 403, headers: sec(new Headers({ "content-type": TEXT.txt })) });
 
+    // 11-16 장중 감시용 상태 점검(로그인 불필요, 시세 몇 개와 자료 갱신 시각만 — 개인정보·키 없음, 30초 캐시)
+    if (p === "/health") {
+      const ck = new Request("https://goatstock-web.internal/health"), cache = caches.default; let hit = await cache.match(ck);
+      if (!hit) {
+        const o = { t: now() };
+        await Promise.all([["i", "/i"], ["q", "/q?c=005930,000660"], ["night", "/night"]].map(async ([k, q]) => { const t0 = Date.now(); try { const r = await env.LIVE.fetch(new Request("https://goatstock-live.internal" + q)); const j = await r.json(); o[k] = { ms: Date.now() - t0, v: k === "i" ? j.i : k === "q" ? j.p : j.fut }; } catch (e) { o[k] = { err: String(e).slice(0, 80) }; } }));
+        try { const { results } = await env.DB.prepare("SELECT p, at FROM f WHERE p IN ('data/meta.json','data/KR/index.json','static/idx_hist.json','static/rank_kr.json')").all(); o.files = Object.fromEntries((results || []).map(x => [x.p, x.at])); } catch (e) {}
+        hit = new Response(JSON.stringify(o), { headers: { "content-type": TEXT.json, "cache-control": "max-age=30" } }); await cache.put(ck, hit.clone());
+      }
+      return new Response(hit.body, { headers: sec(new Headers({ "content-type": TEXT.json, "cache-control": "no-store" })) });
+    }
     // 로그인·가입
     if (p.startsWith("/api/")) {
       if (req.method === "POST" && !(req.headers.get("origin") || "").startsWith(u.origin)) return J({ ok: false, msg: "잘못된 요청" }, 403);
