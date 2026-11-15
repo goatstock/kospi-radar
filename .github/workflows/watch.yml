@@ -1,0 +1,14 @@
+name: 장중 실시간 감시
+on:
+  schedule:
+    - cron: "*/5 23 * * 0-4"   # 한국 평일 08:00~08:55
+    - cron: "*/5 0-6 * * 1-5"  # 한국 평일 09:00~15:55
+  workflow_dispatch:
+concurrency: { group: watch, cancel-in-progress: true }
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - run: python tools/watch/watch.py
