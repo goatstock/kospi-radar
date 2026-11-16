@@ -239,8 +239,8 @@ export default {
       if (!active(me)) return J({ ok: false, ended: true }, 402);
       const day = new Date(now() + 9 * 3600000).toISOString().slice(0, 10);
       const qk = me.id + "|" + day, seen = (QC.get(qk) || 0) + 1; if (QC.size > 5000) QC.clear(); QC.set(qk, seen);
-      const qw = env.DB.prepare("INSERT INTO us(uid,day,n) VALUES(?,?,1) ON CONFLICT(uid,day) DO UPDATE SET n=n+1 RETURNING n").bind(me.id, day).first().then(q => { if (q && q.n > (QC.get(qk) || 0)) QC.set(qk, q.n); }).catch(() => {});
-      if (ctx && ctx.waitUntil) ctx.waitUntil(qw); else await qw;
+      // 11-16: DB 쓰기를 10회에 1번으로(방문자 증가 대비 — 무료 한도 하루 10만 쓰기)
+      if (seen % 10 === 1) { const qw = env.DB.prepare("INSERT INTO us(uid,day,n) VALUES(?,?,10) ON CONFLICT(uid,day) DO UPDATE SET n=n+10 RETURNING n").bind(me.id, day).first().then(q => { if (q && q.n > (QC.get(qk) || 0)) QC.set(qk, q.n); }).catch(() => {}); if (ctx && ctx.waitUntil) ctx.waitUntil(qw); else await qw; }
       const q = { n: QC.get(qk) };
       if (me.role !== "owner" && q && q.n > QUOTA) return J({ ok: false, msg: "오늘 이용 한도를 넘었습니다(자동 수집 방지)" }, 429);
       if (p === "/rt/wk") {  // 11-14: 주말·야간에도 도는 '위켄드' 가격(코인 거래소 24시간 파생, 실제 지수 아님) — 20초 캐시
