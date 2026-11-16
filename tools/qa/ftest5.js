@@ -22,7 +22,7 @@ const R=[];const ok=(n,c,msg)=>R.push([n,!!c,msg||'']);
  const p2=await page(T);P.push(p2);await p2.route('**/data/KR/gaplog.json',ro=>ro.fulfill({contentType:'application/json',body:JSON.stringify({...G,hit:48})}));await p2.evaluate(()=>{GAPLOG=null;delete CACHE['data/KR/gaplog.json'];go('score')});await p2.waitForTimeout(2500);ok('제42회 적중 55% 미만이면 경고',(await p2.innerText('#view')).includes('55% 아래'));
  // 43/44
  await pg.unroute('**/data/KR/gaplog.json');await pg.evaluate(()=>{GAPLOG=null;go('kr')});await pg.waitForTimeout(3500);const uc=await pg.evaluate(()=>(document.querySelector('#uscard .gapp em')||{}).innerText||'');
- ok('제43·44회 미장 카드에 실제 적중·오차 폭',uc.includes(`최근 ${G.n}일 실제 적중 ${G.hit}%`)&&uc.includes(`±${G.mae}%p 빗나감`),uc);
+ ok('미장 카드: 적중률 수치 대신 검증 기록 안내(11-16 GPT 감사 P0)',uc.includes('검증 기록은 성적표에서')&&!uc.includes('실제 적중'),uc);
  // 48 brief
  ok('제48회 오늘의 요약에 시초가 성적',(await pg.innerText('.brief')).includes(`방향 ${G.hit}% 맞혔습니다`));
  // 45 glossary
