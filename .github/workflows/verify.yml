@@ -1,0 +1,9 @@
+name: 등급 검증(수동)
+on: workflow_dispatch
+jobs:
+  v:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: python tools/lab/verify_today.py
