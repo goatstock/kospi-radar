@@ -1,5 +1,8 @@
-name: 등급 검증(수동)
-on: workflow_dispatch
+name: 등급 당일 검증
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "45 6 * * 1-5"   # 한국 평일 15:45(장 마감 뒤) 매일 자동 검증
 jobs:
   v:
     runs-on: ubuntu-latest
