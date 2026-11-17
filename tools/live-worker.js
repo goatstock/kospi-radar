@@ -113,7 +113,7 @@ export default {
     });
     if (u.pathname === "/m" && codes[0]) return cached(req, ctx, async () => {
       const d = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10).replace(/-/g, "");
-      const j = await (await fetch(`https://api.stock.naver.com/chart/domestic/item/${codes[0]}/minute?startDateTime=${d}0900&endDateTime=${d}1530`, { headers: H })).json();
+      const j = await (await fetch(`https://api.stock.naver.com/chart/domestic/${/^(KOSPI|KOSDAQ|KPI200)$/.test(codes[0]) ? "index" : "item"}/${codes[0]}/minute?startDateTime=${d}0900&endDateTime=${d}1530`, { headers: H })).json();
       return { t: kst(), b: (j || []).map(x => [x.localDateTime.slice(8, 12), x.openPrice, x.highPrice, x.lowPrice, x.currentPrice, x.accumulatedTradingVolume]) };
     });
     if (u.pathname === "/fx") return cached(req, ctx, fxAll);

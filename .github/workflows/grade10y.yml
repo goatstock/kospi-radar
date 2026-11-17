@@ -1,0 +1,15 @@
+name: 등급 10년 검증
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: python tools/lab/hist10y.py > /dev/null
+      - run: python tools/lab/grade10y.py
