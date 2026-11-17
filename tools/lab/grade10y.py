@@ -14,10 +14,10 @@ for c, b in B.items():
     b.sort(); cl = [x[4] for x in b]; n = len(b)
     if n < 300: continue
     s20 = [0]*n; s60 = [0]*n; acc = 0
-    for i in range(130, n-21, 1):
-        if cl[i] <= 0 or b[i+1][1] <= 0: continue
+    for i in range(130, n-21, 3):  # 3거래일 간격 표본(속도)
+        if min(cl[i-130:i+1]) <= 0 or b[i+1][1] <= 0: continue
         m20, m60, m120 = ma(cl, i, 20), ma(cl, i, 60), ma(cl, i, 120)
-        r20 = cl[i]/cl[i-20]-1; r5 = cl[i]/cl[i-5]-1; hi = max(x[2] for x in b[max(0,i-250):i+1])
+        r20 = cl[i]/cl[i-20]-1; r5 = cl[i]/cl[i-5]-1; hi = max(cl[max(0,i-250):i+1])
         o = b[i+1][1]; f5 = b[i+5][4]/o-1; f20 = b[i+20][4]/o-1
         if abs(f5) > 1 or abs(f20) > 2: continue
         S.append((b[i][0], r20, r5, cl[i] > m20 > m60, cl[i] < m20 < m60, cl[i]/hi, cl[i] > m120, f5, f20))
@@ -27,7 +27,7 @@ for x in S: D[x[0]].append(x)
 def test(name, key):
     T5=[];B5=[];T20=[];B20=[];Y=C.defaultdict(list);ABS=[]
     for d, L in D.items():
-        if len(L) < 300: continue
+        if len(L) < 100: continue
         a5 = st.mean(x[7] for x in L); a20 = st.mean(x[8] for x in L)
         s = sorted(L, key=key); k = len(s)//5; lo, hi = s[:k], s[-k:]
         t5 = st.mean(x[7] for x in hi); b5 = st.mean(x[7] for x in lo)
@@ -43,7 +43,7 @@ test("120일선 위", lambda x: (x[6], x[1]))
 # 현재 등급과 같은 묘사 기준: 정배열 & 20일+ = 강세, 역배열 & 20일- = 약세
 G = C.defaultdict(lambda: [[], []])
 for d, L in D.items():
-    if len(L) < 300: continue
+    if len(L) < 100: continue
     a5 = st.mean(x[7] for x in L); a20 = st.mean(x[8] for x in L)
     for x in L:
         g = "강세" if x[3] and x[1] > 0 else "약세" if x[4] and x[1] < 0 else "중간"
