@@ -438,10 +438,10 @@ function go(v,arg,popY){if(!gate())return;
   ({kr:viewKR,us:viewUS,macro:viewMacro,news:viewNews,paper:viewPaper,score:viewScore,find:viewFind,stock:viewStock})[v](arg).then(()=>pcLayout(v)).then(()=>{if(popY)setTimeout(()=>window.scrollTo(0,popY),350)}).catch(e=>{$("#view").innerHTML=`<div class="card"><div class="empty">자료를 불러오지 못했습니다.<br><span class="note">${esc(e.message)}</span><br>${retryBtn(v,arg)}</div></div>`})}
 /* lists */
 const ACTS=["추세 강세","관심","중립","주의","추세 약세"];
-/* 11-17 회장님 지시 "등급 제대로 분석·검토": 1,243종목 × 6개월(13.3만 표본) 재검증 결과를 그대로 공개 */
+/* 11-17 회장님 지시 "등급은 10년치 분석에": 1,243종목 × 10년(93만 표본, tools/lab/grade10y.py) 재검증 결과를 그대로 공개 */
 const GRADENOTE=`<details class="gnote" style="margin-top:8px;font-size:12.5px;color:var(--sub);line-height:1.6"><summary style="cursor:pointer;font-weight:700;color:var(--ink)">ⓘ 이 등급은 '지금 차트 상태'이며 앞으로의 예측이 아닙니다</summary>
 <div>· <b>묘사 정확도</b>: 추세 강세 종목의 82%가 이동평균 정배열·100%가 20일 수익 플러스, 추세 약세 종목의 95%가 역배열·100%가 20일 수익 마이너스였습니다(11/16 기준).</div>
-<div>· <b>예측력 검증</b>: 지난 6개월 전 종목 13.3만 건을 다시 계산해 보니, 정배열(강세) 상위 20% 종목은 다음 5거래일 동안 시장 평균보다 <b class="dn">0.62%p 덜</b> 올랐고, 약세 쪽은 0.14%p 더 올랐습니다. 이 기간 한국 시장은 '많이 오른 종목이 되돌리는' 흐름이 강했습니다.</div>
+<div>· <b>예측력 검증(10년)</b>: 2016~2026년 1,243종목 93만 건을 다시 계산했습니다. 추세 강세 종목은 다음 5거래일 시장 평균 대비 <b>+0.01%p</b>, 추세 약세 종목은 <b>+0.03%p</b>로 차이가 사실상 없었습니다. 20일 수익률 상위 20%는 11년 중 10년에서 하위 20%보다 덜 올랐습니다.</div>
 <div>· 따라서 추세 강세는 '살 종목', 추세 약세는 '팔 종목'이라는 뜻이 아닙니다. 상장폐지 종목이 빠진 자료라 실제와 다를 수 있으며, 수익을 보장하지 않습니다.</div></details>`;
 function counts(rows){const c={};rows.forEach(r=>c[r[3]]=(c[r[3]]||0)+1);return c}
 function distBar(c){const k=[["추세 강세","var(--up)"],["관심","#FFB3BA"],["중립","var(--line)"],["주의","#A8CBFF"],["추세 약세","var(--dn)"]];
